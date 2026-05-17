@@ -48,4 +48,31 @@ userApp.put("/password",async(req,res)=>{
     res.status(200).json({message:"Password updated"})
 })
 
+//refresh-token
+userApp.post("/refresh", async (req, res) => {
+  try{
+    const refreshToken = req.cookies.refreshToken || req.body.refreshToken
+    if (!refreshToken)
+      return res.status(401).json({ message: "Token not found" })
+
+    const decoded = verify(refreshToken, process.env.JWT_REFRESH) // can throw!
+    const user = await UserModel.findById(decoded.id)
+    if (!user || user.refreshToken !== refreshToken)
+      return res.status(403).json({ message: "Invalid refresh token" })
+
+    const newAccessToken = sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "2d" }
+    )
+    res.cookie("token", newAccessToken, {
+         httpOnly: true,
+         secure: true,
+         sameSite: "none" })
+    res.status(200).json({ message: "Token Refreshed", token: newAccessToken })
+  } 
+  catch(err) {
+    res.status(401).json({ message: "Invalid or expired refresh token" })
+  }
+})
 
