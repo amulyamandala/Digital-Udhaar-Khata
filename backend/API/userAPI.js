@@ -19,3 +19,12 @@ userApp.get("/logout",(req,res)=>{
 
 })
 //check-auth
+userApp.get("/check-auth",async(req,res)=>{
+
+})
+//get profile
+userApp.get("/profile",verifyToken,async(req,res)=>{
+
+
+})
+//update profile
