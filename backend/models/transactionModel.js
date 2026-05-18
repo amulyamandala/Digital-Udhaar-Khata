@@ -7,8 +7,9 @@ const transactionSchema=new Schema({
     type:Schema.Types.ObjectId
   },
   type:{
+    
 
-  }, // CREDIT or DEBIT
+  }, 
   amount:{
 
   },
@@ -22,7 +23,7 @@ const transactionSchema=new Schema({
 
   },
   createdAt:{
-    
+
   }
 
 })
