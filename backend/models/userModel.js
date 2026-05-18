@@ -4,15 +4,28 @@ const userSchema=new Schema({
         type:String,
         required:[true,"Name is required"]
     },
-    email:{
-        type:String,
-        required:[true,"Email is required"],
+    phone:{
+        type:Number,
+        required:[true,"Phone is required"],
         unique:true
     },
-    password:{
+    shopName:{
         type:String,
-        required:[true,"Password required"]
+        required:[true,"Shop name required"],
+        unique:true
     },
+    language:{
+        type:String,
+        default:"english"
+    },
+  subscriptionPlan:{
+         type:String,
+         enum:["free","premium"]
+  },
+  createdAt:{
+        type:Date,
+        default:Date.now
+  },
     refreshToken:{
         type:String
     }
