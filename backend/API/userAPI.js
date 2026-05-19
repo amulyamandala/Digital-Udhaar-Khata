@@ -7,73 +7,43 @@ const { sign, verify } = jwt;
 export const userApp = exp.Router();
 
 // REGISTER
-userApp.post("/register", async (req, res) => {
+userApp.post("/register",async(req,res)=>{
   try {
     const {name,phone,shopName,language,password,subscriptionPlan}=req.body;
     // check existing user
-    const existingUser = await UserModel.findOne({
-      $or: [{ phone }, { shopName }]
-    });
-
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "User already exists" });
-    }
-
+    const existingUser=await UserModel.findOne({$or: [{ phone }, { shopName }]});
+if(existingUser){
+      return res.status(400).json({ message: "User already exists" });}
     // hash password
-    const hashedPassword = await hash(password, 12);
+    const hashedPassword=await hash(password, 12);
 
     // create user
-    const newUser = await UserModel.create({
-      name,
-      phone,
-      shopName,
-      language,
-      subscriptionPlan,
-      password: hashedPassword
-    });
+    const newUser=await UserModel.create({name,phone,shopName,language,subscriptionPlan,password: hashedPassword});
 
-    res.status(201).json({
-      message: "Registration successful",
-      user: newUser
-    });
+    res.status(201).json({message: "Registration successful",user: newUser});
   } catch (err) {
-    res.status(500).json({
-      message: err.message
-    });
+    res.status(500).json({message: err.message});
   }
 });
-
-
 // LOGIN
-userApp.post("/login", async (req, res) => {
+userApp.post("/login",async(req,res)=>{
   try {
-    const { phone, password } = req.body;
-
+    const { phone, password }=req.body;
     // find user
-    const user = await UserModel.findOne({ phone });
+    const user=await UserModel.findOne({ phone });
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
-
     // compare password
-    const isPasswordValid = await compare(
-      password,
-      user.password
-    );
+    const isPasswordValid = await compare(password,user.password);
 
-    if (!isPasswordValid) {
-      return res
-        .status(401)
-        .json({ message: "Invalid password" });
+    if(!isPasswordValid){
+      return res.status(401).json({ message: "Invalid password" });
     }
 
     // access token
-    const token = sign(
+    const token=sign(
       {
         id: user._id,
         phone: user.phone
@@ -85,15 +55,7 @@ userApp.post("/login", async (req, res) => {
     );
 
     // refresh token
-    const refreshToken = sign(
-      {
-        id: user._id
-      },
-      process.env.JWT_REFRESH,
-      {
-        expiresIn: "7d"
-      }
-    );
+    const refreshToken=sign({id: user._id},process.env.JWT_REFRESH,{expiresIn: "7d"});
 
     // save refresh token
     user.refreshToken = refreshToken;
@@ -112,15 +74,9 @@ userApp.post("/login", async (req, res) => {
       sameSite: "none"
     });
 
-    res.status(200).json({
-      message: "Login successful",
-      token,
-      refreshToken
-    });
+    res.status(200).json({message: "Login successful",token,refreshToken});
   } catch (err) {
-    res.status(500).json({
-      message: err.message
-    });
+    res.status(500).json({message: err.message});
   }
 });
 
@@ -131,9 +87,7 @@ userApp.get("/logout", verifyToken, async (req, res) => {
     const user = await UserModel.findById(req.user.id);
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     user.refreshToken = "";
@@ -146,46 +100,35 @@ userApp.get("/logout", verifyToken, async (req, res) => {
       message: "Logout successful"
     });
   } catch (err) {
-    res.status(500).json({
-      message: err.message
-    });
+    res.status(500).json({message: err.message});
   }
 });
 
 
 // CHECK AUTH
-userApp.get("/check-auth", verifyToken, async (req, res) => {
+userApp.get("/check-auth",verifyToken,async(req,res)=>{
   try {
-    res.status(200).json({
-      message: "Authenticated",
-      user: req.user
-    });
+    res.status(200).json({message: "Authenticated",user: req.user});
   } catch (err) {
-    res.status(500).json({
-      message: err.message
-    });
+    res.status(500).json({message: err.message});
   }
 });
 
 
 // GET PROFILE
-userApp.get("/profile", verifyToken, async (req, res) => {
+userApp.get("/profile",verifyToken,async(req,res)=>{
   try {
     const user = await UserModel.findById(req.user.id).select(
       "-password -refreshToken"
     );
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.status(200).json(user);
   } catch (err) {
-    res.status(500).json({
-      message: err.message
-    });
+    res.status(500).json({message: err.message});
   }
 });
 
