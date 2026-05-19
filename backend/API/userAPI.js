@@ -5,7 +5,6 @@ import { verifyToken } from "../middleware/verifyToken.js";
 import jwt from "jsonwebtoken";
 const { sign, verify } = jwt;
 export const userApp = exp.Router();
-
 // REGISTER
 userApp.post("/register",async(req,res)=>{
   try {
