@@ -37,8 +37,8 @@ paymentApp.post("/create-link",verifyToken,async(req,res)=>{
           callback_method: "get"
         });
       // save payment
-      const payment =
-        await PaymentModel.create({customerId: customer._id,
+      const payment =await PaymentModel.create(
+        {customerId: customer._id,
           shopId: req.user.id,
           amount,
           paymentLink: paymentLink.short_url,
