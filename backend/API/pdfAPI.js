@@ -2,38 +2,21 @@ import exp from "express";
 import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
-
 import { verifyToken } from "../middleware/verifyToken.js";
-
 import { CustomerModel } from "../models/customerModel.js";
 import { TransactionModel } from "../models/transactionModel.js";
 import { StatementModel } from "../models/statementModel.js";
-
 export const statementApp = exp.Router();
-
-
 // GENERATE MONTHLY STATEMENT PDF
-statementApp.get(
-  "/monthly/:customerId",
-  verifyToken,
-  async (req, res) => {
+statementApp.get("/monthly/:customerId",verifyToken,async(req,res)=>{
     try {
-      const customerId =
-        req.params.customerId;
-
+      const customerId =req.params.customerId;
       // check customer
-      const customer =
-        await CustomerModel.findOne({
-          _id: customerId,
-          shopId: req.user.id
-        });
+      const customer =await CustomerModel.findOne({ _id: customerId,shopId: req.user.id});
 
       if (!customer) {
-        return res.status(404).json({
-          message: "Customer not found"
-        });
+        return res.status(404).json({message: "Customer not found"});
       }
-
       // get current month
       const startDate = new Date();
       startDate.setDate(1);
