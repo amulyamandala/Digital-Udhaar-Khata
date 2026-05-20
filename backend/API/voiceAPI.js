@@ -2,11 +2,9 @@ import exp from "express";
 import multer from "multer";
 import fs from "fs";
 import OpenAI from "openai";
-
 import { verifyToken } from "../middleware/verifyToken.js";
 import { CustomerModel } from "../models/customerModel.js";
 import { TransactionModel } from "../models/transactionModel.js";
-
 export const voiceApp = exp.Router();
 // OPENAI CONFIG
 const openai = new OpenAI({
