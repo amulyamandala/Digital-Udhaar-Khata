@@ -118,16 +118,9 @@ statementApp.get("/monthly/:customerId",verifyToken,async(req,res)=>{
           closingBalance:
             customer.totalBalance
         });
-      res.status(201).json({
-        message:
-          "Statement generated successfully",
-
-        statement
-      });
+      res.status(201).json({message:"Statement generated successfully",statement});
     } catch (err) {
-      res.status(500).json({
-        message: err.message
-      });
+      res.status(500).json({message: err.message});
     }});
 // DOWNLOAD STATEMENT PDF
 statementApp.get("/download/:statementId",verifyToken,async (req, res) => {
