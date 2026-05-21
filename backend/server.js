@@ -3,6 +3,15 @@ import { connect } from 'mongoose'
 import { config } from 'dotenv'
 import cookieParser from "cookie-parser"
 import cors from 'cors'
+import { authApp } from './API/authAPI.js'
+import { customerApp } from './API/customerAPI.js'
+import { transactionApp } from './API/transactionAPI.js'
+import { analyticsApp } from './API/analyticsAPI.js'
+import { notificationApp } from './API/notificationsAPI.js'
+import { pdfApp } from './API/pdfAPI.js'
+import { paymentApp } from './API/paymentAPI.js'
+import { voiceApp } from './API/voiceAPI.js'
+
 config()
 const app= exp()
 app.use(cors({
@@ -12,6 +21,8 @@ credentials:true
 ))
 app.use(exp.json())
 app.use(cookieParser())
+// routes 
+
 
 
 const port=process.env.PORT||5000
