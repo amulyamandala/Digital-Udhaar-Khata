@@ -22,9 +22,15 @@ credentials:true
 app.use(exp.json())
 app.use(cookieParser())
 // routes 
-
-
-
+app.use("/auth", authApp);
+app.use("/customers", customerApp);
+app.use("/transactions", transactionApp);
+app.use("/analytics", analyticsApp);
+app.use("/notifications", notificationApp);
+app.use("/statements", statementApp);
+app.use("/payments", paymentApp);
+app.use("/voice", voiceApp);
+app.use("/whatsapp", whatsappApp);
 const port=process.env.PORT||5000
 const connectionDb=async()=>{
     try{
