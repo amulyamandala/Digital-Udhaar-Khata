@@ -9,8 +9,7 @@ analyticsApp.get("/top-defaulters",verifyToken,async(req,res)=>{
     try {
       const customers =
         await CustomerModel.find({
-          shopId: req.user.id
-        })
+          shopId: req.user.id})
           .sort({ totalBalance: -1 })
           .limit(10)
           .select(
