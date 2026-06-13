@@ -189,7 +189,7 @@ router.get("/profile", verifyToken, async (req, res) => {
 // UPDATE PROFILE
 router.put("/profile", verifyToken, async (req, res) => {
   try {
-    const { name, language, shopName, shopAddress, shopGSTIN, shopCategory, twoFactorEnabled } = req.body;
+    const { name, language, shopName, shopAddress, shopGSTIN, shopCategory, twoFactorEnabled, shopQRCodeUrl } = req.body;
     const user = await User.findById(req.user.id);
 
     if (!user) {
@@ -203,6 +203,7 @@ router.put("/profile", verifyToken, async (req, res) => {
     if (shopGSTIN) user.shopGSTIN = shopGSTIN;
     if (shopCategory) user.shopCategory = shopCategory;
     if (twoFactorEnabled !== undefined) user.twoFactorEnabled = twoFactorEnabled;
+    if (shopQRCodeUrl) user.shopQRCodeUrl = shopQRCodeUrl;
 
     await user.save();
 

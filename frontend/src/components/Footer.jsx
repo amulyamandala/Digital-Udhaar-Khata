@@ -10,7 +10,7 @@ const Footer = () => {
       <Container>
         <Row className="mb-4">
           <Col md={3} sm={6} className="mb-4">
-            <h6 className="fw-bold mb-3">🏪 Udhaar Khata</h6>
+            <h6 className="fw-bold mb-3"> Udhaar Khata</h6>
             <p className="text-muted small">
               Digital ledger for Indian Kirana stores. Manage customer credit with ease.
             </p>

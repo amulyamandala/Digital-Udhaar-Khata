@@ -50,10 +50,12 @@ API.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return API(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, redirect to login
+        // Refresh failed, clear tokens and redirect to login if not already there
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }

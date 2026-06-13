@@ -50,6 +50,7 @@ const userSchema = new mongoose.Schema(
     },
     twoFactorSecret: String,
     profilePicture: String,
+    shopQRCodeUrl: String,
     shopAddress: String,
     shopGSTIN: String,
     shopCategory: {

@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Navbar, Nav, Container, Button, Offcanvas, Dropdown } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaBars, FaUser, FaSignOutAlt, FaCog } from 'react-icons/fa';
+import { useVoice } from '../context/VoiceContext';
+import { FaBars, FaUser, FaSignOutAlt, FaCog, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 const NavBar = () => {
   const { user, logout } = useAuth();
+  const { isVoiceEnabled, toggleVoice } = useVoice();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [showOffcanvas, setShowOffcanvas] = useState(false);
@@ -27,20 +29,19 @@ const NavBar = () => {
     { label: t('navbar.transactions'), path: '/transactions', icon: '💰' },
     { label: t('navbar.payments'), path: '/payments', icon: '💳' },
     { label: t('navbar.statements'), path: '/statements', icon: '📄' },
-    { label: t('navbar.analytics'), path: '/analytics', icon: '📈' },
-    { label: t('navbar.voice'), path: '/voice', icon: '🎤' },
+    { label: t('navbar.analytics'), path: '/analytics', icon: '📈' }
   ];
 
   return (
     <>
       <Navbar bg="dark" expand="lg" sticky="top" className="shadow-sm">
         <Container>
-          <Navbar.Brand 
-            onClick={() => navigate('/dashboard')} 
+          <Navbar.Brand
+            onClick={() => navigate('/dashboard')}
             style={{ cursor: 'pointer', fontSize: '1.5rem', fontWeight: 'bold' }}
             className="text-primary"
           >
-            🏪 Udhaar Khata
+            Udhaar Khata
           </Navbar.Brand>
 
           {/* Desktop Menu */}
@@ -54,6 +55,17 @@ const NavBar = () => {
                 {item.label}
               </Nav.Link>
             ))}
+
+            {/* Voice Toggle */}
+            <Button
+              variant={isVoiceEnabled ? "primary" : "outline-light"}
+              size="sm"
+              className="ms-2 border-0"
+              onClick={toggleVoice}
+              title={isVoiceEnabled ? "Voice Assist On" : "Voice Assist Off"}
+            >
+              {isVoiceEnabled ? <FaVolumeUp /> : <FaVolumeMute />}
+            </Button>
 
             {/* Language Dropdown */}
             <Dropdown className="ms-2">
@@ -109,7 +121,6 @@ const NavBar = () => {
         show={showOffcanvas}
         onHide={() => setShowOffcanvas(false)}
         placement="end"
-        responsive="lg"
       >
         <Offcanvas.Header closeButton>
           <Offcanvas.Title>Menu</Offcanvas.Title>
@@ -128,6 +139,24 @@ const NavBar = () => {
                 {item.icon} {item.label}
               </Nav.Link>
             ))}
+
+            <hr />
+
+            {/* Mobile Voice Toggle */}
+            <div className="mb-3">
+              <h6 className="fw-bold mb-2">Voice Assist</h6>
+              <Button
+                variant={isVoiceEnabled ? 'primary' : 'outline-secondary'}
+                className="w-100 mb-2"
+                onClick={() => {
+                  toggleVoice();
+                  setShowOffcanvas(false);
+                }}
+              >
+                {isVoiceEnabled ? <FaVolumeUp className="me-2" /> : <FaVolumeMute className="me-2" />}
+                {isVoiceEnabled ? 'Voice Assist: ON' : 'Voice Assist: OFF'}
+              </Button>
+            </div>
 
             <hr />
 

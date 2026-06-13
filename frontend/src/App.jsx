@@ -13,10 +13,18 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
+// Voice Context
+import { VoiceProvider } from "./context/VoiceContext";
+
 // Pages - Main
 import Dashboard from "./pages/Dashboard";
-import Profile from "./components/CustomerProfile";
+import Profile from "./pages/ShopProfile";
 import PaymentSimulator from "./components/PaymentSimulator";
+import Customers from "./pages/Customers";
+import Transactions from "./pages/Transactions";
+import Payments from "./pages/Payments";
+import Statements from "./pages/Statements";
+import Analytics from "./pages/Analytics";
 
 // Layout for protected pages
 const ProtectedLayout = ({ children }) => (
@@ -78,10 +86,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProtectedLayout>
-              <div className="container py-4">
-                <h1>Customers Page</h1>
-                <p>Customer management page coming soon...</p>
-              </div>
+              <Customers />
             </ProtectedLayout>
           </ProtectedRoute>
         }
@@ -92,10 +97,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProtectedLayout>
-              <div className="container py-4">
-                <h1>Transactions Page</h1>
-                <p>Transaction management page coming soon...</p>
-              </div>
+              <Transactions />
             </ProtectedLayout>
           </ProtectedRoute>
         }
@@ -106,10 +108,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProtectedLayout>
-              <div className="container py-4">
-                <h1>Payments Page</h1>
-                <p>Payment management page coming soon...</p>
-              </div>
+              <Payments />
             </ProtectedLayout>
           </ProtectedRoute>
         }
@@ -120,10 +119,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProtectedLayout>
-              <div className="container py-4">
-                <h1>Statements Page</h1>
-                <p>Statement management page coming soon...</p>
-              </div>
+              <Statements />
             </ProtectedLayout>
           </ProtectedRoute>
         }
@@ -134,28 +130,13 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProtectedLayout>
-              <div className="container py-4">
-                <h1>Analytics Page</h1>
-                <p>Analytics dashboard coming soon...</p>
-              </div>
+              <Analytics />
             </ProtectedLayout>
           </ProtectedRoute>
         }
       />
 
-      <Route
-        path="/voice"
-        element={
-          <ProtectedRoute>
-            <ProtectedLayout>
-              <div className="container py-4">
-                <h1>Voice Assistant Page</h1>
-                <p>Voice Assistant coming soon...</p>
-              </div>
-            </ProtectedLayout>
-          </ProtectedRoute>
-        }
-      />
+
 
       {/* Fallback redirection */}
       <Route path="*" element={<Navigate to="/login" replace />} />
@@ -165,8 +146,9 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <VoiceProvider>
+      <AuthProvider>
+        <BrowserRouter>
         <AppRoutes />
         <ToastContainer
           position="bottom-right"
@@ -181,6 +163,7 @@ function App() {
         />
       </BrowserRouter>
     </AuthProvider>
+    </VoiceProvider>
   );
 }
 
