@@ -1,55 +1,67 @@
-import { Schema, model } from "mongoose";
-const paymentSchema=new Schema(
+const mongoose = require("mongoose");
+
+const paymentSchema = new mongoose.Schema(
   {
     customerId: {
-      type:Schema.Types.ObjectId,
-      ref:"customer",
-      required:[true, "Customer ID is required"]
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: [true, "Customer ID is required"],
     },
-
-    shopId:{
-      type:Schema.Types.ObjectId,
-      ref:"user",
-      required:[true, "Shop ID is required"]
+    shopId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Shop ID is required"],
     },
-
-    amount:{
-      type:Number,
-      required:[true, "Amount is required"],
-      min:[1, "Amount must be greater than 0"]
+    amount: {
+      type: Number,
+      required: [true, "Amount is required"],
+      min: [1, "Amount must be greater than 0"],
     },
-
-    paymentLink:{
-      type:String,
-      required:[true, "Payment link is required"]
+    paymentLink: {
+      type: String,
+      required: [true, "Payment link is required"],
     },
-
-    paymentStatus:{
-      type:String,
-      enum:["PENDING", "SUCCESS", "FAILED"],
-      default:"PENDING"
+    paymentStatus: {
+      type: String,
+      enum: ["PENDING", "SUCCESS", "FAILED", "CANCELLED"],
+      default: "PENDING",
     },
-
-    paymentMethod:{
-      type:String,
-      enum:["UPI", "CARD", "BANK_TRANSFER", "CASH"],
-      default:"UPI"
+    paymentMethod: {
+      type: String,
+      enum: ["UPI", "CARD", "BANK_TRANSFER", "CASH", "WALLET"],
+      default: "UPI",
     },
-
-    transactionId:{
-      type:String,
-      unique:true
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
+    razorpaySignature: String,
+    transactionId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
-
-    paidAt:{
-      type:Date
-    }
+    paidAt: Date,
+    failureReason: String,
+    attemptCount: {
+      type: Number,
+      default: 1,
+    },
+    reminderSentCount: {
+      type: Number,
+      default: 0,
+    },
+    expiresAt: Date,
+    notes: String,
+    description: String,
   },
   {
-    timestamps:true,
-    versionKey:false,
-    strict:"throw"
+    timestamps: true,
+    versionKey: false,
   }
 );
 
-export const PaymentModel=model("payment", paymentSchema);
+// Index for faster queries
+paymentSchema.index({ shopId: 1, customerId: 1, createdAt: -1 });
+paymentSchema.index({ razorpayOrderId: 1 });
+paymentSchema.index({ paymentStatus: 1, expiresAt: 1 });
+
+module.exports = mongoose.model("Payment", paymentSchema);

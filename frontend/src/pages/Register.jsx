@@ -1,215 +1,245 @@
-import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { getTranslation } from "../utils/i18n";
-import { speakText } from "../utils/tts";
-import Header from "../components/Header";
-import { Link, useNavigate } from "react-router-dom";
-import { Store, User, Phone, Lock, Sparkles, Check } from "lucide-react";
+import React, { useState } from 'react';
+import { Container, Form, Button, Card, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-export const Register = () => {
-  const { register, user } = useAuth();
-  const currentLang = user?.language || "english";
+const Register = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    shopName: '',
+    language: 'en',
+    password: '',
+    confirmPassword: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [shopName, setShopName] = useState("");
-  const [password, setPassword] = useState("");
-  const [subscriptionPlan, setSubscriptionPlan] = useState("free");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateForm = () => {
+    if (!formData.name || !formData.phone || !formData.shopName || !formData.password) {
+      setError(t('auth.fillAllFields'));
+      return false;
+    }
+
+    if (formData.phone.length !== 10) {
+      setError(t('auth.phoneInvalid'));
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      setError(t('auth.passwordTooShort'));
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError(t('auth.passwordMismatch'));
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !phone || !shopName || !password) {
-      setError("Please fill in all fields");
+    setError('');
+
+    if (!validateForm()) {
       return;
     }
-    setError("");
-    setSubmitting(true);
+
+    setLoading(true);
+
     try {
-      await register({
-        name,
-        phone: Number(phone),
-        shopName,
-        password,
-        subscriptionPlan,
-        language: currentLang
+      const result = await register({
+        name: formData.name,
+        phone: formData.phone,
+        shopName: formData.shopName,
+        language: formData.language,
+        password: formData.password,
       });
-      speakText("Registration successful. Please log in.", currentLang);
-      navigate("/login");
+
+      if (result.success) {
+        toast.success(t('auth.registerSuccess'));
+        navigate('/dashboard');
+      } else {
+        setError(result.error);
+        toast.error(result.error);
+      }
     } catch (err) {
-      setError(err.message || "Registration failed");
-      speakText(err.message || "Registration failed", currentLang);
+      const errorMsg = err.response?.data?.message || t('auth.registerError');
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const registerExplain = `Create your digital ledger account. Enter your name, ten-digit mobile number, shop name, and set a password. Select a subscription plan: free or premium.`;
-
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-50 via-slate-100 to-indigo-50">
-      <Header titleExplain={registerExplain} />
-      
-      <div className="flex-grow flex items-center justify-center p-6 slide-up">
-        <div className="w-full max-w-lg bg-white rounded-3xl border border-purple-100 shadow-xl overflow-hidden p-8 my-6">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold text-purple-950">
-              {getTranslation(currentLang, "register")}
-            </h2>
-            <p className="text-sm text-purple-600 mt-2 font-medium">
-              Join thousands of Kirana stores going digital
-            </p>
-          </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm font-semibold flex gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
-              <p>{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-bold text-purple-950 mb-1.5">
-                {getTranslation(currentLang, "ownerName")}
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
-                <input
-                  type="text"
-                  placeholder="E.g., Rajesh Kumar"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-purple-50/50 border border-purple-200 focus:border-purple-500 rounded-2xl outline-none font-semibold text-purple-950 placeholder-purple-300 transition-all"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-purple-950 mb-1.5">
-                {getTranslation(currentLang, "phone")}
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
-                <input
-                  type="number"
-                  placeholder="E.g., 9876543210"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-purple-50/50 border border-purple-200 focus:border-purple-500 rounded-2xl outline-none font-semibold text-purple-950 placeholder-purple-300 transition-all"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-purple-950 mb-1.5">
-                {getTranslation(currentLang, "shopName")}
-              </label>
-              <div className="relative">
-                <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
-                <input
-                  type="text"
-                  placeholder="E.g., Rajesh Kirana Store"
-                  value={shopName}
-                  onChange={(e) => setShopName(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-purple-50/50 border border-purple-200 focus:border-purple-500 rounded-2xl outline-none font-semibold text-purple-950 placeholder-purple-300 transition-all"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-purple-950 mb-1.5">
-                {getTranslation(currentLang, "password")}
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
-                <input
-                  type="password"
-                  placeholder="Minimum 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-purple-50/50 border border-purple-200 focus:border-purple-500 rounded-2xl outline-none font-semibold text-purple-950 placeholder-purple-300 transition-all"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Subscription plans selector */}
-            <div>
-              <label className="block text-sm font-bold text-purple-950 mb-3">
-                {getTranslation(currentLang, "subscription")}
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Free plan */}
-                <div
-                  onClick={() => setSubscriptionPlan("free")}
-                  className={`p-4 border-2 rounded-2xl cursor-pointer flex flex-col justify-between transition-all select-none ${
-                    subscriptionPlan === "free"
-                      ? "border-purple-600 bg-purple-50/50 shadow-md"
-                      : "border-purple-100 hover:border-purple-200"
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <span className="font-extrabold text-purple-950">Free Plan</span>
-                    {subscriptionPlan === "free" && (
-                      <div className="bg-purple-600 text-white rounded-full p-0.5">
-                        <Check className="w-3.5 h-3.5" />
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xs text-purple-500 font-semibold mt-2">Basic Ledger & PDF statements</span>
+    <div className="min-vh-100 bg-gradient d-flex align-items-center py-5" style={{
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    }}>
+      <Container>
+        <Row className="justify-content-center">
+          <Col xs={12} sm={10} md={8} lg={6}>
+            <Card className="shadow-lg border-0 rounded-4">
+              <Card.Body className="p-5">
+                {/* Header */}
+                <div className="text-center mb-4">
+                  <h1 className="display-5 fw-bold mb-2">🏪</h1>
+                  <h2 className="fw-bold text-dark mb-2">{t('auth.registerShop')}</h2>
+                  <p className="text-muted">{t('auth.registerSubtitle')}</p>
                 </div>
 
-                {/* Premium plan */}
-                <div
-                  onClick={() => setSubscriptionPlan("premium")}
-                  className={`p-4 border-2 rounded-2xl cursor-pointer flex flex-col justify-between transition-all relative select-none ${
-                    subscriptionPlan === "premium"
-                      ? "border-purple-600 bg-purple-50/50 shadow-md"
-                      : "border-purple-100 hover:border-purple-200"
-                  }`}
-                >
-                  <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
-                    <Sparkles className="w-2.5 h-2.5" />
-                    PRO
-                  </div>
-                  <div className="flex justify-between items-start pr-8">
-                    <span className="font-extrabold text-purple-950">Premium Plan</span>
-                    {subscriptionPlan === "premium" && (
-                      <div className="bg-purple-600 text-white rounded-full p-0.5">
-                        <Check className="w-3.5 h-3.5" />
-                      </div>
+                {/* Error Alert */}
+                {error && (
+                  <Alert variant="danger" className="border-0 rounded-3" dismissible>
+                    {error}
+                  </Alert>
+                )}
+
+                {/* Register Form */}
+                <Form onSubmit={handleSubmit}>
+                  {/* Name */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-bold text-dark">{t('auth.ownerName')}</Form.Label>
+                    <Form.Control
+                      type="text"
+                      placeholder="Your Name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="py-3 rounded-3 border-2"
+                      disabled={loading}
+                    />
+                  </Form.Group>
+
+                  {/* Phone */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-bold text-dark">{t('auth.phone')}</Form.Label>
+                    <Form.Control
+                      type="tel"
+                      placeholder="9999999999"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="py-3 rounded-3 border-2"
+                      disabled={loading}
+                      maxLength="10"
+                    />
+                  </Form.Group>
+
+                  {/* Shop Name */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-bold text-dark">{t('auth.shopName')}</Form.Label>
+                    <Form.Control
+                      type="text"
+                      placeholder="My Kirana Store"
+                      name="shopName"
+                      value={formData.shopName}
+                      onChange={handleChange}
+                      className="py-3 rounded-3 border-2"
+                      disabled={loading}
+                    />
+                  </Form.Group>
+
+                  {/* Language */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-bold text-dark">{t('auth.language')}</Form.Label>
+                    <Form.Select
+                      name="language"
+                      value={formData.language}
+                      onChange={handleChange}
+                      className="py-3 rounded-3 border-2"
+                      disabled={loading}
+                    >
+                      <option value="en">English</option>
+                      <option value="hi">हिंदी (Hindi)</option>
+                      <option value="te">తెలుగు (Telugu)</option>
+                      <option value="ta">தமிழ் (Tamil)</option>
+                    </Form.Select>
+                  </Form.Group>
+
+                  {/* Password */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-bold text-dark">{t('auth.password')}</Form.Label>
+                    <div className="input-group">
+                      <Form.Control
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="py-3 rounded-3 rounded-end-0 border-2"
+                        disabled={loading}
+                      />
+                      <Button
+                        variant="outline-secondary"
+                        className="rounded-3 rounded-start-0 border-2"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={loading}
+                      >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </Button>
+                    </div>
+                  </Form.Group>
+
+                  {/* Confirm Password */}
+                  <Form.Group className="mb-4">
+                    <Form.Label className="fw-bold text-dark">{t('auth.confirmPassword')}</Form.Label>
+                    <Form.Control
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className="py-3 rounded-3 border-2"
+                      disabled={loading}
+                    />
+                  </Form.Group>
+
+                  {/* Register Button */}
+                  <Button
+                    type="submit"
+                    className="w-100 py-3 fw-bold fs-5 rounded-3 border-0"
+                    variant="primary"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        {t('auth.registering')}
+                      </>
+                    ) : (
+                      t('auth.register')
                     )}
-                  </div>
-                  <span className="text-xs text-purple-500 font-semibold mt-2">Voice control, AI reminders, WhatsApp bot</span>
-                </div>
-              </div>
-            </div>
+                  </Button>
+                </Form>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-purple-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-purple-700 active:scale-95 duration-100 transition shadow-lg shadow-purple-200 glow-primary cursor-pointer disabled:opacity-50 mt-4"
-            >
-              <span>{submitting ? "Registering..." : getTranslation(currentLang, "register")}</span>
-            </button>
-          </form>
-
-          <div className="mt-8 text-center border-t border-purple-50 pt-6">
-            <p className="text-sm text-purple-950 font-medium">
-              Already have an account?{" "}
-              <Link to="/login" className="text-purple-600 font-extrabold hover:underline">
-                Login here
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
+                {/* Login Link */}
+                <hr className="my-4" />
+                <p className="text-center text-muted mb-0">
+                  {t('auth.alreadyHaveAccount')}{' '}
+                  <Link to="/login" className="text-primary text-decoration-none fw-bold">
+                    {t('auth.loginNow')}
+                  </Link>
+                </p>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
     </div>
   );
 };

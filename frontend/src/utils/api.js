@@ -1,33 +1,59 @@
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:5000",
-  withCredentials: true, // critical for cookie-based authentication
+  baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
-    "Content-Type": "application/json"
-  }
+    "Content-Type": "application/json",
+  },
 });
 
-// Response interceptor to handle token expiry / unauthenticated redirections
+// Request interceptor - Add token to all requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor - Handle errors and token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
-    // If we get unauthenticated (401) and have not retried yet, attempt refresh
-    if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== "/auth/login") {
+
+    // Handle 401 - Token expired or invalid
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
       try {
-        await axios.post("http://localhost:5000/auth/refresh", {}, { withCredentials: true });
-        return api(originalRequest); // retry original request
-      } catch (refreshError) {
-        // Refresh token expired or failed, redirect user to login
-        console.error("Refresh token validation failed. Session expired.");
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          const response = await axios.post(
+            `${API_BASE_URL}/auth/refresh-token`,
+            { refreshToken },
+            { withCredentials: true }
+          );
+
+          const { accessToken } = response.data;
+          localStorage.setItem("token", accessToken);
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return api(originalRequest);
         }
+      } catch (refreshError) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );

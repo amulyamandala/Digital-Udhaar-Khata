@@ -1,0 +1,84 @@
+{
+  "navbar": {
+    "dashboard": "डैशबोर्ड",
+    "customers": "ग्राहक",
+    "transactions": "लेनदेन",
+    "payments": "भुगतान",
+    "statements": "विवरण",
+    "analytics": "विश्लेषण",
+    "voice": "वॉयस असिस्टेंट",
+    "profile": "प्रोफाइल",
+    "logout": "लॉग आउट"
+  },
+  "auth": {
+    "login": "लॉगिन करें",
+    "loginSuccess": "✅ लॉगिन सफल!",
+    "register": "पंजीकरण करें",
+    "registerSuccess": "✅ पंजीकरण सफल! Udhaar Khata में आपका स्वागत है",
+    "phone": "फोन नंबर",
+    "password": "पासवर्ड",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "ownerName": "मालिक का नाम",
+    "shopName": "दुकान का नाम",
+    "language": "पसंदीदा भाषा",
+    "rememberMe": "इस डिवाइस पर मुझे याद रखें",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "noAccount": "खाता नहीं है?",
+    "registerNow": "अभी पंजीकरण करें",
+    "alreadyHaveAccount": "पहले से खाता है?",
+    "loginNow": "अभी लॉगिन करें",
+    "fillAllFields": "कृपया सभी फील्ड भरें"
+  },
+  "dashboard": {
+    "title": "डैशबोर्ड",
+    "welcome": "स्वागत है,",
+    "totalCustomers": "कुल ग्राहक",
+    "totalOutstanding": "कुल बकाया",
+    "totalRecovered": "कुल वसूल किया गया",
+    "pending_payments": "लंबित भुगतान",
+    "recentTransactions": "हाल के लेनदेन"
+  },
+  "customers": {
+    "title": "ग्राहक",
+    "addCustomer": "ग्राहक जोड़ें",
+    "search": "ग्राहक खोजें...",
+    "name": "नाम",
+    "phone": "फोन",
+    "balance": "शेष",
+    "trustScore": "विश्वास स्कोर",
+    "status": "स्थिति",
+    "action": "कार्रवाई"
+  },
+  "transactions": {
+    "title": "लेनदेन",
+    "addTransaction": "लेनदेन जोड़ें",
+    "credit": "क्रेडिट (उधार)",
+    "debit": "डेबिट (जमा)",
+    "amount": "राशि",
+    "date": "तारीख",
+    "type": "प्रकार"
+  },
+  "payments": {
+    "title": "भुगतान",
+    "createLink": "भुगतान लिंक बनाएं",
+    "history": "भुगतान इतिहास",
+    "status": "स्थिति",
+    "pending": "लंबित",
+    "success": "सफल",
+    "failed": "विफल"
+  },
+  "analytics": {
+    "title": "विश्लेषण",
+    "totalCredit": "कुल क्रेडिट",
+    "totalRecovery": "कुल वसूली"
+  },
+  "common": {
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "add": "जोड़ें",
+    "close": "बंद करें",
+    "loading": "लोड हो रहा है..."
+  }
+}

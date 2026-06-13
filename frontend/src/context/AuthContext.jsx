@@ -1,101 +1,159 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import api from "../utils/api";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import API from "../services/api";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Check auth session on startup
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
-      const res = await api.get("/auth/check-auth");
+      setLoading(true);
+      const res = await API.get("/auth/check-auth");
       setUser(res.data.user);
+      setIsAuthenticated(true);
+      setError(null);
     } catch (err) {
       setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkAuth();
+  }, [checkAuth]);
+
+  const login = useCallback(async (phone, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await API.post("/auth/login", { phone, password });
+      const { user, accessToken, refreshToken } = res.data;
+      
+      localStorage.setItem('token', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      setUser(user);
+      setToken(accessToken);
+      setIsAuthenticated(true);
+      
+      return { success: true, user };
+    } catch (err) {
+      const message = err.response?.data?.message || "Login failed";
+      setError(message);
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const login = async (phone, password) => {
+  const register = useCallback(async (userData) => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await api.post("/auth/login", { phone, password });
-      setUser(res.data.user);
-      return res.data;
+      const res = await API.post("/auth/register", userData);
+      const { user, accessToken, refreshToken } = res.data;
+      
+      localStorage.setItem('token', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      setUser(user);
+      setToken(accessToken);
+      setIsAuthenticated(true);
+      
+      return { success: true, user };
     } catch (err) {
-      throw err.response?.data || { message: "Login failed" };
+      const message = err.response?.data?.message || "Registration failed";
+      setError(message);
+      return { success: false, error: message };
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const register = async (userData) => {
-    setLoading(true);
+  const logout = useCallback(async () => {
     try {
-      const res = await api.post("/auth/register", userData);
-      return res.data;
+      await API.post("/auth/logout");
     } catch (err) {
-      throw err.response?.data || { message: "Registration failed" };
+      console.error("Logout error:", err);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    setLoading(true);
-    try {
-      await api.get("/auth/logout");
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
       setUser(null);
-    } catch (err) {
-      console.error("Logout failed:", err.message);
-    } finally {
-      setLoading(false);
+      setToken(null);
+      setIsAuthenticated(false);
+      setError(null);
     }
-  };
+  }, []);
 
-  const updateProfile = async (profileData) => {
+  const updateProfile = useCallback(async (profileData) => {
     try {
-      const res = await api.put("/auth/profile", profileData);
-      setUser(res.data.user);
-      return res.data;
+      const res = await API.put("/auth/profile", profileData);
+      const updatedUser = res.data.user;
+      
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      return { success: true, user: updatedUser };
     } catch (err) {
-      throw err.response?.data || { message: "Failed to update profile" };
+      const message = err.response?.data?.message || "Failed to update profile";
+      setError(message);
+      return { success: false, error: message };
     }
-  };
+  }, []);
 
-  const changeLanguage = async (lang) => {
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
+    try {
+      await API.put("/auth/change-password", { currentPassword, newPassword });
+      return { success: true };
+    } catch (err) {
+      const message = err.response?.data?.message || "Password change failed";
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const changeLanguage = useCallback(async (lang) => {
+    localStorage.setItem('selectedLanguage', lang);
     if (user) {
       try {
         await updateProfile({ language: lang });
       } catch (err) {
-        console.error("Failed to sync language selection with server:", err.message);
+        console.error("Failed to sync language:", err);
       }
-    } else {
-      // Allow switching language on login/register pages
-      setUser((prev) => (prev ? { ...prev, language: lang } : { language: lang }));
     }
+  }, [user, updateProfile]);
+
+  const value = {
+    user,
+    token,
+    isAuthenticated,
+    loading,
+    error,
+    login,
+    register,
+    logout,
+    checkAuth,
+    updateProfile,
+    changePassword,
+    changeLanguage,
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        logout,
-        checkAuth,
-        updateProfile,
-        changeLanguage
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

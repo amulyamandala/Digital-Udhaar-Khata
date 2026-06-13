@@ -1,66 +1,184 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// Components
+import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+// Pages - Auth
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+
+// Pages - Main
 import Dashboard from "./pages/Dashboard";
-import CustomerProfile from "./pages/CustomerProfile";
-import PaymentSimulator from "./pages/PaymentSimulator";
-import "./App.css";
+import Profile from "./components/CustomerProfile";
+import PaymentSimulator from "./components/PaymentSimulator";
 
-// Auth Guard component for protecting private routes
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+// Layout for protected pages
+const ProtectedLayout = ({ children }) => (
+  <div className="d-flex flex-column min-vh-100">
+    <NavBar />
+    <main className="flex-grow-1">
+      {children}
+    </main>
+    <Footer />
+  </div>
+);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-      </div>
-    );
-  }
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public Authentication routes - No NavBar/Footer */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      
+      {/* Public payment simulation */}
+      <Route path="/pay-mock/:id" element={<PaymentSimulator />} />
 
-  if (!user || !user._id) {
-    // Session is not authenticated, redirect to Login
-    return <Navigate to="/login" replace />;
-  }
+      {/* Protected routes - With NavBar/Footer */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <Dashboard />
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
 
-  return children;
-};
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <Dashboard />
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <Profile />
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/customers"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <div className="container py-4">
+                <h1>Customers Page</h1>
+                <p>Customer management page coming soon...</p>
+              </div>
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/transactions"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <div className="container py-4">
+                <h1>Transactions Page</h1>
+                <p>Transaction management page coming soon...</p>
+              </div>
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/payments"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <div className="container py-4">
+                <h1>Payments Page</h1>
+                <p>Payment management page coming soon...</p>
+              </div>
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/statements"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <div className="container py-4">
+                <h1>Statements Page</h1>
+                <p>Statement management page coming soon...</p>
+              </div>
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <div className="container py-4">
+                <h1>Analytics Page</h1>
+                <p>Analytics dashboard coming soon...</p>
+              </div>
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/voice"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <div className="container py-4">
+                <h1>Voice Assistant Page</h1>
+                <p>Voice Assistant coming soon...</p>
+              </div>
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Fallback redirection */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          {/* Public Authentication routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          {/* Public customer simulation billing terminal */}
-          <Route path="/pay-mock/:id" element={<PaymentSimulator />} />
-
-          {/* Protected Shopkeeper dashboards */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/customer/:id"
-            element={
-              <ProtectedRoute>
-                <CustomerProfile />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Fallback redirection */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AppRoutes />
+        <ToastContainer
+          position="bottom-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
       </BrowserRouter>
     </AuthProvider>
   );

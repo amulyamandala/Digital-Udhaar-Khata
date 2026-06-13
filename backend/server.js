@@ -1,87 +1,148 @@
-import exp from 'express'
-import { connect } from 'mongoose'
-import { config } from 'dotenv'
-import cookieParser from "cookie-parser"
-import cors from 'cors'
-import fs from 'fs'
-import path from 'path'
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const compression = require("compression");
+const fs = require("fs");
+const path = require("path");
 
-import { authApp } from './API/authAPI.js'
-import { customerApp } from './API/customerAPI.js'
-import { transactionApp } from './API/transactionAPI.js'
-import { analyticsApp } from './API/analyticsAPI.js'
-import { notificationApp } from './API/notificationsAPI.js'
-import { statementApp } from './API/pdfAPI.js'
-import { paymentApp } from './API/paymentAPI.js'
-import { voiceApp } from './API/voiceAPI.js'
-import { whatsappApp } from './API/whatsappAPI.js'
-
-config()
+// Load environment variables
+dotenv.config();
 
 // Create required directories if they don't exist
-if (!fs.existsSync("uploads")) {
-  fs.mkdirSync("uploads");
-}
-if (!fs.existsSync("statements")) {
-  fs.mkdirSync("statements");
-}
+const directories = ["uploads", "statements"];
+directories.forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
-const app = exp()
+// Import routes
+const authAPI = require("./API/authAPI");
+const customerAPI = require("./API/customerAPI_new");
 
-// Enable CORS
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5000', 'http://localhost:3000'],
-  credentials: true
-}))
+const app = express();
 
-app.use(exp.json())
-app.use(exp.urlencoded({ extended: true }))
-app.use(cookieParser())
+// Security & Middleware
+app.use(helmet());
+app.use(compression());
+app.use(morgan("combined"));
 
-// Serve uploads and statements statically
-app.use("/uploads", exp.static("uploads"))
-app.use("/statements-files", exp.static("statements"))
+// CORS Configuration
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:3000", "http://localhost:5000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-// Routes
-app.use("/auth", authApp)
-app.use("/customers", customerApp)
-app.use("/transactions", transactionApp)
-app.use("/analytics", analyticsApp)
-app.use("/notifications", notificationApp)
-app.use("/statements", statementApp)
-app.use("/payments", paymentApp)
-app.use("/voice", voiceApp)
-app.use("/whatsapp", whatsappApp)
+// Body Parser
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(cookieParser());
 
-const port = process.env.PORT || 5000
+// Static Files
+app.use("/uploads", express.static("uploads"));
+app.use("/statements", express.static("statements"));
 
-const connectionDb = async () => {
+// Database Connection
+const connectDB = async () => {
   try {
-    await connect(process.env.DB_URL);
-    console.log("Connected to MongoDB database");
-    app.listen(port, () => console.log(`Server started on port ${port}`))
+    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/udhaar-khata", {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("✓ MongoDB Connected");
   } catch (err) {
-    console.error("Database connection failed:", err.message)
-    process.exit(1)
+    console.error("✗ MongoDB Connection Error:", err.message);
+    process.exit(1);
   }
-}
-connectionDb()
+};
 
-// 404 Route handler
-app.use((req, res, next) => {
-  res.status(404).json({ message: "Invalid path" })
-})
+connectDB();
 
-// Error handling middleware
+// API Routes
+app.use("/api/auth", authAPI);
+app.use("/api/customers", customerAPI);
+// app.use("/api/transactions", transactionAPI);
+// app.use("/api/payments", paymentAPI);
+// app.use("/api/notifications", notificationsAPI);
+// app.use("/api/statements", statementsAPI);
+// app.use("/api/voice", voiceAPI);
+// app.use("/api/analytics", analyticsAPI);
+// app.use("/api/whatsapp", whatsappAPI);
+
+// Health Check
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    message: "Udhaar Khata Server is running",
+    timestamp: new Date(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
+// API Status
+app.get("/api/status", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    database: mongoose.connection.readyState === 1 ? "Connected" : "Disconnected",
+    version: "1.0.0",
+  });
+});
+
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found", path: req.originalUrl });
+});
+
+// Error Handler
 app.use((err, req, res, next) => {
-  console.error("Server Error:", err.stack || err.message)
-  
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({ message: "Validation failed", errors: err.errors })
+  console.error("Error:", err);
+
+  if (err.name === "ValidationError") {
+    return res.status(400).json({
+      message: "Validation Error",
+      errors: Object.values(err.errors).map((e) => e.message),
+    });
   }
-  if (err.name === 'CastError') {
-    return res.status(400).json({ message: "Invalid ID format" })
+
+  if (err.name === "CastError") {
+    return res.status(400).json({ message: "Invalid ID format" });
   }
-  
-  res.status(500).json({ message: err.message || "Internal server error" })
-})
+
+  if (err.name === "JsonWebTokenError") {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
+  });
+});
+
+// Start Server
+const PORT = process.env.PORT || 5000;
+const server = app.listen(PORT, () => {
+  console.log(`\n✓ Udhaar Khata Server`);
+  console.log(`  Port: ${PORT}`);
+  console.log(`  Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`  URL: http://localhost:${PORT}\n`);
+});
+
+// Graceful Shutdown
+process.on("SIGTERM", () => {
+  console.log("\n✓ SIGTERM received, shutting down gracefully...");
+  server.close(async () => {
+    console.log("✓ Server closed");
+    await mongoose.connection.close();
+    console.log("✓ Database connection closed");
+    process.exit(0);
+  });
+});
+
+module.exports = app;
