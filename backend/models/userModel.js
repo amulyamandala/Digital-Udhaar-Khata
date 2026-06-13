@@ -18,9 +18,14 @@ const userSchema=new Schema({
         type:String,
         default:"english"
     },
+    password:{
+        type:String,
+        required:[true,"Password is required"]
+    },
   subscriptionPlan:{
          type:String,
-         enum:["free","premium"]
+         enum:["free","premium"],
+         default:"free"
   },
   createdAt:{
         type:Date,
