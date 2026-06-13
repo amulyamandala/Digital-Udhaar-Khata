@@ -1,14 +1,14 @@
-import exp from "express";
-import twilio from "twilio";
-import OpenAI from "openai";
-import Razorpay from "razorpay";
-import { UserModel } from "../models/userModel.js";
-import { CustomerModel } from "../models/customerModel.js";
-import { TransactionModel } from "../models/transactionModel.js";
-import { PaymentModel } from "../models/paymentModel.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+const exp = require("express");
+const twilio = require("twilio");
+const OpenAI = require("openai");
+const Razorpay = require("razorpay");
+const { UserModel  } = require("../models/userModel.js");
+const { CustomerModel  } = require("../models/customerModel.js");
+const { TransactionModel  } = require("../models/transactionModel.js");
+const { PaymentModel  } = require("../models/paymentModel.js");
+const { verifyToken  } = require("../middleware/verifyToken.js");
 
-export const whatsappApp = exp.Router();
+const whatsappApp = exp.Router();
 
 const client = twilio(
   process.env.TWILIO_SID || "ACmock",
@@ -16,7 +16,7 @@ const client = twilio(
 );
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY || "mock-openai-key"
 });
 
 const razorpay = new Razorpay({
@@ -273,3 +273,4 @@ whatsappApp.post("/send-statement", verifyToken, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+module.exports = whatsappApp;

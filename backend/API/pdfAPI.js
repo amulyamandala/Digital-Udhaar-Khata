@@ -1,15 +1,15 @@
-import exp from "express";
-import fs from "fs";
-import path from "path";
-import PDFDocument from "pdfkit";
-import { verifyToken } from "../middleware/verifyToken.js";
-import { CustomerModel } from "../models/customerModel.js";
-import { TransactionModel } from "../models/transactionModel.js";
-import { StatementModel } from "../models/statementModel.js";
-import { UserModel } from "../models/userModel.js";
-import cloudinary from "../config/cloudinary.js";
+const exp = require("express");
+const fs = require("fs");
+const path = require("path");
+const PDFDocument = require("pdfkit");
+const { verifyToken  } = require("../middleware/verifyToken.js");
+const { CustomerModel  } = require("../models/customerModel.js");
+const { TransactionModel  } = require("../models/transactionModel.js");
+const { StatementModel  } = require("../models/statementModel.js");
+const { UserModel  } = require("../models/userModel.js");
+const cloudinary = require("../config/cloudinary.js");
 
-export const statementApp = exp.Router();
+const statementApp = exp.Router();
 
 // Helper to upload local file to Cloudinary
 const uploadFileToCloudinary = (filePath) => {
@@ -220,3 +220,4 @@ statementApp.get("/download/:statementId", verifyToken, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+module.exports = statementApp;

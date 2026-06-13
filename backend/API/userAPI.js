@@ -1,10 +1,10 @@
-import exp from "express";
-import { UserModel } from "../models/userModel.js";
-import { hash, compare } from "bcrypt";
-import { verifyToken } from "../middleware/verifyToken.js";
-import jwt from "jsonwebtoken";
+const exp = require("express");
+const { UserModel  } = require("../models/userModel.js");
+const { hash, compare  } = require("bcrypt");
+const { verifyToken  } = require("../middleware/verifyToken.js");
+const jwt = require("jsonwebtoken");
 const { sign, verify } = jwt;
-export const userApp=exp.Router();
+const userApp =exp.Router();
 // REGISTER
 userApp.post("/register",async(req,res)=>{
   try {
@@ -225,3 +225,4 @@ userApp.post("/refresh",async(req, res)=>{
     });
   }
 });
+module.exports = userApp;

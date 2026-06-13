@@ -1,12 +1,12 @@
-import exp from "express";
-import twilio from "twilio";
-import OpenAI from "openai";
-import { verifyToken } from "../middleware/verifyToken.js";
-import { CustomerModel } from "../models/customerModel.js";
-import { UserModel } from "../models/userModel.js";
-import { ReminderModel } from "../models/remainderModel.js"; // named remainderModel.js in files
+const exp = require("express");
+const twilio = require("twilio");
+const OpenAI = require("openai");
+const { verifyToken  } = require("../middleware/verifyToken.js");
+const { CustomerModel  } = require("../models/customerModel.js");
+const { UserModel  } = require("../models/userModel.js");
+const { ReminderModel  } = require("../models/remainderModel.js"); // named remainderModel.js in files
 
-export const notificationApp = exp.Router();
+const notificationApp = exp.Router();
 
 const client = twilio(
   process.env.TWILIO_SID || "ACmock",
@@ -14,7 +14,7 @@ const client = twilio(
 );
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY || "mock-openai-key"
 });
 
 // Helper to check Twilio setup
@@ -266,3 +266,4 @@ notificationApp.post("/bulk", verifyToken, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+module.exports = notificationApp;

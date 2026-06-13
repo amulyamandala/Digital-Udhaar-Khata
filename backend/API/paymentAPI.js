@@ -1,12 +1,12 @@
-import exp from "express";
-import crypto from "crypto";
-import Razorpay from "razorpay";
-import { verifyToken } from "../middleware/verifyToken.js";
-import { PaymentModel } from "../models/paymentModel.js";
-import { CustomerModel } from "../models/customerModel.js";
-import { TransactionModel } from "../models/transactionModel.js";
+const exp = require("express");
+const crypto = require("crypto");
+const Razorpay = require("razorpay");
+const { verifyToken  } = require("../middleware/verifyToken.js");
+const { PaymentModel  } = require("../models/paymentModel.js");
+const { CustomerModel  } = require("../models/customerModel.js");
+const { TransactionModel  } = require("../models/transactionModel.js");
 
-export const paymentApp = exp.Router();
+const paymentApp = exp.Router();
 
 // RAZORPAY CONFIG
 const razorpay = new Razorpay({
@@ -187,3 +187,4 @@ paymentApp.get("/history", verifyToken, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+module.exports = paymentApp;

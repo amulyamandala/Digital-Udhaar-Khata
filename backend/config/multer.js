@@ -1,6 +1,6 @@
-import multer from "multer";
+const multer = require("multer");
 
-export const upload = multer({
+const upload = multer({
   //store in RAM
   storage: multer.memoryStorage(),
   //to avoid RAM overflow
@@ -18,3 +18,4 @@ export const upload = multer({
     }
   },
 });
+module.exports = upload;

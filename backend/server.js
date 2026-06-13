@@ -23,6 +23,12 @@ directories.forEach((dir) => {
 // Import routes
 const authAPI = require("./API/authAPI");
 const customerAPI = require("./API/customerAPI_new");
+const transactionAPI = require("./API/transactionAPI").transactionApp || require("./API/transactionAPI");
+const paymentAPI = require("./API/paymentAPI").paymentApp || require("./API/paymentAPI");
+const notificationsAPI = require("./API/notificationsAPI").notificationApp || require("./API/notificationsAPI");
+const voiceAPI = require("./API/voiceAPI").voiceApp || require("./API/voiceAPI");
+const analyticsAPI = require("./API/analyticsAPI").analyticsApp || require("./API/analyticsAPI");
+const whatsappAPI = require("./API/whatsappAPI").whatsappApp || require("./API/whatsappAPI");
 
 const app = express();
 
@@ -69,13 +75,13 @@ connectDB();
 // API Routes
 app.use("/api/auth", authAPI);
 app.use("/api/customers", customerAPI);
-// app.use("/api/transactions", transactionAPI);
-// app.use("/api/payments", paymentAPI);
-// app.use("/api/notifications", notificationsAPI);
-// app.use("/api/statements", statementsAPI);
-// app.use("/api/voice", voiceAPI);
-// app.use("/api/analytics", analyticsAPI);
-// app.use("/api/whatsapp", whatsappAPI);
+app.use("/api/transactions", transactionAPI);
+app.use("/api/payments", paymentAPI);
+app.use("/api/notifications", notificationsAPI);
+// app.use("/api/statements", statementsAPI); // statementsAPI doesn't exist
+app.use("/api/voice", voiceAPI);
+app.use("/api/analytics", analyticsAPI);
+app.use("/api/whatsapp", whatsappAPI);
 
 // Health Check
 app.get("/api/health", (req, res) => {

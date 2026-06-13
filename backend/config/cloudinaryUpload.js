@@ -1,6 +1,6 @@
-import cloudinary from "./cloudinary.js";
+const cloudinary = require("./cloudinary.js");
 
-export const uploadToCloudinary = (buffer) => {
+const uploadToCloudinary = (buffer) => {
   console.log("Upload function called"); // 👈 ADD
   console.log(buffer);
   return new Promise((resolve, reject) => {
@@ -11,3 +11,5 @@ export const uploadToCloudinary = (buffer) => {
     stream.end(buffer);
   });
 };
+
+module.exports = uploadToCloudinary;

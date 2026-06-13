@@ -1,10 +1,10 @@
-import exp from "express";
-import { CustomerModel } from "../models/customerModel.js";
-import { TransactionModel } from "../models/transactionModel.js";
-import { UserModel } from "../models/userModel.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+const exp = require("express");
+const { CustomerModel  } = require("../models/customerModel.js");
+const { TransactionModel  } = require("../models/transactionModel.js");
+const { UserModel  } = require("../models/userModel.js");
+const { verifyToken  } = require("../middleware/verifyToken.js");
 
-export const customerApp = exp.Router();
+const customerApp = exp.Router();
 
 // GET PUBLIC CUSTOMER INFO (No auth token required for payment link page)
 customerApp.get("/public/:id", async (req, res) => {
@@ -193,3 +193,4 @@ customerApp.get("/:id/balance", verifyToken, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+module.exports = customerApp;

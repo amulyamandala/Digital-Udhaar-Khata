@@ -1,17 +1,17 @@
-import exp from "express";
-import multer from "multer";
-import fs from "fs";
-import path from "path";
-import OpenAI from "openai";
-import { verifyToken } from "../middleware/verifyToken.js";
-import { CustomerModel } from "../models/customerModel.js";
-import { TransactionModel } from "../models/transactionModel.js";
+const exp = require("express");
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+const OpenAI = require("openai");
+const { verifyToken  } = require("../middleware/verifyToken.js");
+const { CustomerModel  } = require("../models/customerModel.js");
+const { TransactionModel  } = require("../models/transactionModel.js");
 
-export const voiceApp = exp.Router();
+const voiceApp = exp.Router();
 
 // Initialize OpenAI Client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY || "mock-openai-key"
 });
 
 // Configure Multer Storage for audio recording uploads
@@ -213,3 +213,4 @@ Return a JSON object with:
     res.status(500).json({ message: err.message });
   }
 });
+module.exports = voiceApp;

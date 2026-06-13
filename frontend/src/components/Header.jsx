@@ -2,7 +2,7 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { getTranslation } from "../utils/i18n";
 import { speakText } from "../utils/tts";
-import { LogOut, Volume2, Globe, Shop } from "lucide-react";
+import { LogOut, Volume2, Globe, Store } from "lucide-react";
 
 export const Header = ({ titleExplain }) => {
   const { user, logout, changeLanguage } = useAuth();
@@ -22,7 +22,7 @@ export const Header = ({ titleExplain }) => {
     <header className="glass sticky top-0 z-40 w-full px-6 py-4 flex items-center justify-between shadow-sm border-b border-purple-100 rounded-b-2xl">
       <div className="flex items-center gap-3">
         <div className="bg-purple-600 text-white p-2 rounded-xl shadow-md">
-          <Shop className="w-6 h-6" />
+          <Store className="w-6 h-6" />
         </div>
         <div>
           <h1 className="text-xl font-extrabold text-purple-950 tracking-tight m-0 select-none">

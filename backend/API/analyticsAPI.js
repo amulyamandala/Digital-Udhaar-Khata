@@ -1,10 +1,10 @@
-import exp from "express";
-import { verifyToken } from "../middleware/verifyToken.js";
-import { CustomerModel } from "../models/customerModel.js";
-import { TransactionModel } from "../models/transactionModel.js";
-import { PaymentModel } from "../models/paymentModel.js";
+const exp = require("express");
+const { verifyToken  } = require("../middleware/verifyToken.js");
+const { CustomerModel  } = require("../models/customerModel.js");
+const { TransactionModel  } = require("../models/transactionModel.js");
+const { PaymentModel  } = require("../models/paymentModel.js");
 
-export const analyticsApp = exp.Router();
+const analyticsApp = exp.Router();
 
 // UNIFIED DASHBOARD ANALYTICS ENDPOINT
 analyticsApp.get("/dashboard", verifyToken, async (req, res) => {
@@ -195,3 +195,4 @@ analyticsApp.get("/recovery-rate", verifyToken, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+module.exports = analyticsApp;

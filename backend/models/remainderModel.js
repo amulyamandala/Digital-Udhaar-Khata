@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+const { Schema, model  } = require("mongoose");
 const reminderSchema = new Schema(
   {
     customerId:{
@@ -44,4 +44,5 @@ const reminderSchema = new Schema(
   }
 );
 
-export const ReminderModel=model("reminder", reminderSchema);
+const ReminderModel =model("reminder", reminderSchema);
+module.exports = ReminderModel;

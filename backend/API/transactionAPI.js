@@ -1,9 +1,9 @@
-import exp from "express";
-import { TransactionModel } from "../models/transactionModel.js";
-import { CustomerModel } from "../models/customerModel.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+const exp = require("express");
+const { TransactionModel  } = require("../models/transactionModel.js");
+const { CustomerModel  } = require("../models/customerModel.js");
+const { verifyToken  } = require("../middleware/verifyToken.js");
 
-export const transactionApp = exp.Router();
+const transactionApp = exp.Router();
 
 // Helper to sync family balance
 const syncFamilyBalance = async (customer, amountChange) => {
@@ -224,3 +224,4 @@ transactionApp.delete("/:id", verifyToken, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+module.exports = transactionApp;
