@@ -61,15 +61,15 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   return (
-    <div className="min-vh-100 bg-gradient d-flex align-items-center" style={{
+    <div className="min-vh-100  bg-gradient d-flex align-items-center" style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     }}>
       <Container>
         <Row className="justify-content-center">
-          <Col xs={12} sm={10} md={8} lg={5}>
+          <Col xs={11} sm={8} md={5} lg={5}>
             <Card className="shadow-lg border-0 rounded-4">
               <Card.Body className="p-5">
                 {/* Header */}
@@ -175,14 +175,6 @@ const Login = () => {
               </Card.Body>
             </Card>
 
-            {/* Demo Credentials */}
-            <Card className="mt-4 border-0 bg-light">
-              <Card.Body className="small text-muted">
-                <p className="fw-bold mb-2">📝 Demo Credentials:</p>
-                <p className="mb-1">Phone: 9999999999</p>
-                <p className="mb-0">Password: Test@123</p>
-              </Card.Body>
-            </Card>
           </Col>
         </Row>
       </Container>
