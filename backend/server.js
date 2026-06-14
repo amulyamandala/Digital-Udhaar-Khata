@@ -41,7 +41,13 @@ app.use(morgan("combined"));
 // CORS Configuration
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000", "http://localhost:5000", "https://digital-udhaar-khata-two.vercel.app"],
+    origin: [
+      "http://localhost:5173", 
+      "http://localhost:3000", 
+      "http://localhost:5000", 
+      "https://digital-udhaar-khata-two.vercel.app",
+      /\.vercel\.app$/
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
