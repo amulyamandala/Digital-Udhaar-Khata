@@ -1,0 +1,6 @@
+# This file ensures the screenshots folder is tracked by git even when empty.
+# Place your PNG images here and rename them to match the README placeholders:
+# - dashboard.png
+# - customer-profile.png
+# - voice-entry.png
+# - whatsapp-reminder.png

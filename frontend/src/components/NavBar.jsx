@@ -39,7 +39,7 @@ const NavBar = () => {
           <Navbar.Brand
             onClick={() => navigate('/dashboard')}
             style={{ cursor: 'pointer', fontSize: '1.5rem', fontWeight: 'bold' }}
-            className="text-primary"
+            className="text-white"
           >
             Udhaar Khata
           </Navbar.Brand>
