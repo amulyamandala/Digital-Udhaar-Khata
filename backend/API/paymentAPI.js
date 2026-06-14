@@ -2,9 +2,9 @@ const exp = require("express");
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const { verifyToken  } = require("../middleware/verifyToken.js");
-const { PaymentModel  } = require("../models/paymentModel.js");
-const { CustomerModel  } = require("../models/customerModel.js");
-const { TransactionModel  } = require("../models/transactionModel.js");
+const PaymentModel = require("../models/paymentModel.js");
+const CustomerModel = require("../models/customerModel.js");
+const TransactionModel = require("../models/transactionModel.js");
 
 const paymentApp = exp.Router();
 

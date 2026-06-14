@@ -1,8 +1,8 @@
 const exp = require("express");
 const { verifyToken  } = require("../middleware/verifyToken.js");
-const { CustomerModel  } = require("../models/customerModel.js");
-const { TransactionModel  } = require("../models/transactionModel.js");
-const { PaymentModel  } = require("../models/paymentModel.js");
+const CustomerModel = require("../models/customerModel.js");
+const TransactionModel = require("../models/transactionModel.js");
+const PaymentModel = require("../models/paymentModel.js");
 
 const analyticsApp = exp.Router();
 

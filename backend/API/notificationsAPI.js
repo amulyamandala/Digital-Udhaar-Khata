@@ -2,9 +2,9 @@ const exp = require("express");
 const twilio = require("twilio");
 const OpenAI = require("openai");
 const { verifyToken  } = require("../middleware/verifyToken.js");
-const { CustomerModel  } = require("../models/customerModel.js");
-const { UserModel  } = require("../models/userModel.js");
-const { ReminderModel  } = require("../models/remainderModel.js"); // named remainderModel.js in files
+const CustomerModel = require("../models/customerModel.js");
+const UserModel = require("../models/userModel.js");
+const ReminderModel = require("../models/remainderModel.js"); // named remainderModel.js in files
 
 const notificationApp = exp.Router();
 

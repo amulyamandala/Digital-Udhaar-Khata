@@ -1,7 +1,7 @@
 const exp = require("express");
-const { TransactionModel  } = require("../models/transactionModel.js");
-const { CustomerModel  } = require("../models/customerModel.js");
-const { verifyToken  } = require("../middleware/verifyToken.js");
+const TransactionModel = require("../models/transactionModel.js");
+const CustomerModel = require("../models/customerModel.js");
+const { verifyToken } = require("../middleware/verifyToken.js");
 
 const transactionApp = exp.Router();
 
@@ -129,16 +129,40 @@ transactionApp.get("/customer/:id", verifyToken, async (req, res) => {
   }
 });
 
-// GET ALL SHOP TRANSACTIONS
+// GET ALL SHOP TRANSACTIONS (by current user — /shop/me)
+transactionApp.get("/shop/me", verifyToken, async (req, res) => {
+  try {
+    const transactions = await TransactionModel.find({ shopId: req.user.id })
+      .populate("customerId", "name phone")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ transactions });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET ALL SHOP TRANSACTIONS (by explicit shopId)
 transactionApp.get("/shop/:shopId", verifyToken, async (req, res) => {
   try {
-    if (req.params.shopId !== req.user.id) {
+    if (req.params.shopId.toString() !== req.user.id.toString()) {
       return res.status(403).json({ message: "Unauthorized access" });
     }
     const transactions = await TransactionModel.find({ shopId: req.user.id })
       .populate("customerId", "name phone")
       .sort({ createdAt: -1 });
-    res.status(200).json(transactions);
+    res.status(200).json({ transactions });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET ALL SHOP TRANSACTIONS (fallback route)
+transactionApp.get("/", verifyToken, async (req, res) => {
+  try {
+    const transactions = await TransactionModel.find({ shopId: req.user.id })
+      .populate("customerId", "name phone")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ transactions });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

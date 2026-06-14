@@ -61,19 +61,30 @@ userApp.post("/login",async(req,res)=>{
     await user.save();
 
     // cookies
-    res.cookie("token",token,{
-      httpOnly: true,
-      secure: true,
-      sameSite: "none"
-    });
+   res.cookie("token", token, {
+  httpOnly:true,
+  secure:false,
+  sameSite:"lax"
+});
 
-    res.cookie("refreshToken",refreshToken,{
-      httpOnly: true,
-      secure: true,
-      sameSite: "none"
-    });
+res.cookie("refreshToken", refreshToken, {
+  httpOnly:true,
+  secure:false,
+  sameSite:"lax"
+});
 
-    res.status(200).json({message: "Login successful",token,refreshToken});
+    res.status(200).json({
+  message: "Login successful",
+  user:{
+    _id:user._id,
+    name:user.name,
+    phone:user.phone,
+    shopName:user.shopName,
+    language:user.language
+  },
+  token,
+  refreshToken
+});
   } catch (err) {
     res.status(500).json({message: err.message});
   }
@@ -81,7 +92,7 @@ userApp.post("/login",async(req,res)=>{
 
 
 // LOGOUT
-userApp.get("/logout",verifyToken,async(req, res)=>{
+userApp.get("/auth/logout",verifyToken,async(req, res)=>{
   try {
     const user=await UserModel.findById(req.user.id);
 
@@ -210,10 +221,10 @@ userApp.post("/refresh",async(req, res)=>{
     );
 
     res.cookie("token", newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none"
-    });
+  httpOnly:true,
+  secure:false,
+  sameSite:"lax"
+});
 
     res.status(200).json({
       message: "Token refreshed",

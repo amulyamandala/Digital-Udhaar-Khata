@@ -37,13 +37,7 @@ const Transactions = () => {
       const res = await API.get('/transactions/shop/me');
       setTransactions(res.data?.transactions || []);
     } catch (err) {
-      // Fallback: try without /me
-      try {
-        const res2 = await API.get('/transactions');
-        setTransactions(res2.data?.transactions || []);
-      } catch {
-        setError('Failed to load transactions.');
-      }
+      setError('Failed to load transactions.');
     } finally {
       setLoading(false);
     }

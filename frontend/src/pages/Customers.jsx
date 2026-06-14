@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container, Row, Col, Table, Modal, Form, Button, Spinner, Alert, Badge, InputGroup,
 } from 'react-bootstrap';
-import { FaPlus, FaSearch, FaWhatsapp, FaEye } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaWhatsapp, FaEye, FaFilePdf, FaSms } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import API from '../services/api';
 
@@ -13,50 +13,50 @@ const Customers = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
-  const [reminderLoading, setReminderLoading] = useState({});
 
+  // Reminder state
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderCustomer, setReminderCustomer] = useState(null);
+  const [reminderMsg, setReminderMsg] = useState('');
+  const [reminderLoading, setReminderLoading] = useState(false);
+  const [smsLoading, setSmsLoading] = useState(false);
+
+  // Ledger state
   const [showLedgerModal, setShowLedgerModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [ledger, setLedger] = useState([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    city: '',
-    notes: '',
+    name: '', phone: '', address: '', city: '', notes: '',
   });
   const [formError, setFormError] = useState('');
 
+  // ── Data fetching ────────────────────────────────────────────────────────────
   const fetchCustomers = useCallback(async (query = '') => {
     try {
       setLoading(true);
       setError('');
       const res = await API.get(`/customers${query ? `?search=${encodeURIComponent(query)}` : ''}`);
       setCustomers(res.data?.customers || []);
-    } catch (err) {
+    } catch {
       setError('Failed to load customers. Please try again.');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchCustomers(searchTerm);
-  };
-
+  const handleSearch = (e) => { e.preventDefault(); fetchCustomers(searchTerm); };
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearchTerm(val);
     if (!val.trim()) fetchCustomers('');
   };
 
+  // ── Add customer ─────────────────────────────────────────────────────────────
   const validateForm = () => {
     if (!formData.name.trim()) return 'Customer name is required.';
     if (!formData.phone.trim()) return 'Phone number is required.';
@@ -65,19 +65,12 @@ const Customers = () => {
   };
 
   const handleAddCustomer = async () => {
-    const validationError = validateForm();
-    if (validationError) {
-      setFormError(validationError);
-      return;
-    }
-
+    const err = validateForm();
+    if (err) { setFormError(err); return; }
     try {
       setAddLoading(true);
       setFormError('');
-      await API.post('/customers', {
-        ...formData,
-        phone: formData.phone.replace(/\D/g, ''),
-      });
+      await API.post('/customers', { ...formData, phone: formData.phone.replace(/\D/g, '') });
       toast.success(`${formData.name} added successfully!`);
       setShowModal(false);
       setFormData({ name: '', phone: '', address: '', city: '', notes: '' });
@@ -94,25 +87,43 @@ const Customers = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      setFormData((prev) => ({ ...prev, [name]: value.replace(/\D/g, '').slice(0, 10) }));
+      setFormData((p) => ({ ...p, [name]: value.replace(/\D/g, '').slice(0, 10) }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((p) => ({ ...p, [name]: value }));
     }
   };
 
-  const handleSendReminder = async (customer) => {
+  // ── WhatsApp reminder ────────────────────────────────────────────────────────
+  const openReminderModal = (customer) => {
+    setReminderCustomer(customer);
+    setReminderMsg(
+      `Hello ${customer.name}, you have an outstanding balance of ₹${customer.totalBalance} at our store. Kindly clear your dues at your earliest convenience. Thank you! 🙏`
+    );
+    setShowReminderModal(true);
+  };
+
+  const handleSendReminder = async (via = 'whatsapp') => {
+    if (!reminderCustomer) return;
+    const isWhatsApp = via === 'whatsapp';
     try {
-      setReminderLoading((prev) => ({ ...prev, [customer._id]: true }));
-      await API.post('/whatsapp/send-reminder', { customerId: customer._id });
-      toast.success(`Reminder sent to ${customer.name}!`);
+      if (isWhatsApp) setReminderLoading(true); else setSmsLoading(true);
+      const endpoint = isWhatsApp ? '/whatsapp/send-reminder' : '/notifications/send-sms';
+      await API.post(endpoint, {
+        customerId: reminderCustomer._id,
+        message: reminderMsg.trim() || undefined,
+      });
+      toast.success(`✅ ${isWhatsApp ? 'WhatsApp' : 'SMS'} reminder sent to ${reminderCustomer.name}!`);
+      setShowReminderModal(false);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to send reminder.';
+      const msg = err.response?.data?.message || `Failed to send ${isWhatsApp ? 'WhatsApp' : 'SMS'} reminder.`;
       toast.error(msg);
     } finally {
-      setReminderLoading((prev) => ({ ...prev, [customer._id]: false }));
+      setReminderLoading(false);
+      setSmsLoading(false);
     }
   };
 
+  // ── Ledger ───────────────────────────────────────────────────────────────────
   const handleViewLedger = async (customer) => {
     setSelectedCustomer(customer);
     setShowLedgerModal(true);
@@ -121,19 +132,55 @@ const Customers = () => {
     try {
       const res = await API.get(`/customers/${customer._id}/ledger`);
       setLedger(res.data?.transactions || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load ledger.');
     } finally {
       setLedgerLoading(false);
     }
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setFormData({ name: '', phone: '', address: '', city: '', notes: '' });
-    setFormError('');
+  // ── PDF Download ─────────────────────────────────────────────────────────────
+  const handleDownloadPDF = async (customer, monthOffset = 0) => {
+    if (!customer) return;
+    try {
+      setPdfLoading(true);
+      const now = new Date();
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+      const month = targetDate.getMonth(); // 0-indexed
+      const year = targetDate.getFullYear();
+
+      const res = await API.get(
+        `/statements/download/${customer._id}?month=${month}&year=${year}`,
+        { responseType: 'blob' }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${customer.name}_Statement_${targetDate.toLocaleString('default', { month: 'long' })}_${year}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF downloaded!');
+    } catch {
+      toast.error('Failed to generate PDF. Please try again.');
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
+  // ── Send statement via WhatsApp ──────────────────────────────────────────────
+  const handleSendStatement = async (customer) => {
+    try {
+      await API.post('/whatsapp/send-statement', { customerId: customer._id });
+      toast.success(`📲 Statement sent to ${customer.name} via WhatsApp!`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send statement.');
+    }
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="bg-light min-vh-100 py-4">
       <Container fluid className="px-3 px-md-4">
@@ -199,7 +246,7 @@ const Customers = () => {
                   {customers.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="text-center text-muted py-5">
-                        {searchTerm ? 'No customers found for your search.' : 'No customers yet. Add your first customer!'}
+                        {searchTerm ? 'No customers found.' : 'No customers yet. Add your first customer!'}
                       </td>
                     </tr>
                   ) : (
@@ -218,7 +265,7 @@ const Customers = () => {
                             : '—'}
                         </td>
                         <td>
-                          <div className="d-flex gap-2 flex-wrap">
+                          <div className="d-flex gap-1 flex-wrap">
                             <Button
                               variant="outline-primary"
                               size="sm"
@@ -228,20 +275,25 @@ const Customers = () => {
                               <FaEye /> Ledger
                             </Button>
                             {(cust.totalBalance || 0) > 0 && (
-                              <Button
-                                variant="outline-success"
-                                size="sm"
-                                className="d-inline-flex align-items-center gap-1"
-                                disabled={!!reminderLoading[cust._id]}
-                                onClick={() => handleSendReminder(cust)}
-                              >
-                                {reminderLoading[cust._id] ? (
-                                  <Spinner animation="border" size="sm" />
-                                ) : (
-                                  <FaWhatsapp />
-                                )}
-                                {reminderLoading[cust._id] ? 'Sending...' : 'Remind'}
-                              </Button>
+                              <>
+                                <Button
+                                  variant="outline-success"
+                                  size="sm"
+                                  className="d-inline-flex align-items-center gap-1"
+                                  onClick={() => openReminderModal(cust)}
+                                >
+                                  <FaWhatsapp /> Remind
+                                </Button>
+                                <Button
+                                  variant="outline-info"
+                                  size="sm"
+                                  className="d-inline-flex align-items-center gap-1"
+                                  onClick={() => openReminderModal(cust)}
+                                  title="Send SMS reminder"
+                                >
+                                  <FaSms /> SMS
+                                </Button>
+                              </>
                             )}
                           </div>
                         </td>
@@ -254,95 +306,90 @@ const Customers = () => {
           )}
         </div>
 
-        {/* Add Customer Modal */}
-        <Modal show={showModal} onHide={handleCloseModal} centered>
+        {/* ── Add Customer Modal ───────────────────────────────────────────────── */}
+        <Modal show={showModal} onHide={() => { setShowModal(false); setFormData({ name: '', phone: '', address: '', city: '', notes: '' }); setFormError(''); }} centered>
           <Modal.Header closeButton>
             <Modal.Title className="fw-bold">Add New Customer</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            {formError && (
-              <Alert variant="danger" className="py-2 small">
-                {formError}
-              </Alert>
-            )}
+            {formError && <Alert variant="danger" className="py-2 small">{formError}</Alert>}
             <Form noValidate>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold small">Name <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Customer full name"
-                  disabled={addLoading}
-                />
+                <Form.Control type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Customer full name" disabled={addLoading} />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold small">Phone <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="10-digit mobile number"
-                  disabled={addLoading}
-                />
+                <Form.Control type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="10-digit mobile number" disabled={addLoading} />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold small">Address</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={2}
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="Street address"
-                  disabled={addLoading}
-                />
+                <Form.Control as="textarea" rows={2} name="address" value={formData.address} onChange={handleInputChange} placeholder="Street address" disabled={addLoading} />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold small">City</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  placeholder="City"
-                  disabled={addLoading}
-                />
+                <Form.Control type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City" disabled={addLoading} />
               </Form.Group>
               <Form.Group>
                 <Form.Label className="fw-semibold small">Notes</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={2}
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  placeholder="Any additional notes"
-                  disabled={addLoading}
-                />
+                <Form.Control as="textarea" rows={2} name="notes" value={formData.notes} onChange={handleInputChange} placeholder="Any additional notes" disabled={addLoading} />
               </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal} disabled={addLoading}>
-              Cancel
-            </Button>
+            <Button variant="secondary" onClick={() => setShowModal(false)} disabled={addLoading}>Cancel</Button>
             <Button variant="primary" onClick={handleAddCustomer} disabled={addLoading}>
-              {addLoading ? (
-                <>
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  Adding...
-                </>
-              ) : (
-                'Add Customer'
-              )}
+              {addLoading ? <><Spinner animation="border" size="sm" className="me-2" />Adding...</> : 'Add Customer'}
             </Button>
           </Modal.Footer>
         </Modal>
 
-        {/* Ledger Modal */}
+        {/* ── WhatsApp Reminder Modal ──────────────────────────────────────────── */}
+        <Modal show={showReminderModal} onHide={() => setShowReminderModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title className="fw-bold d-flex align-items-center gap-2">
+              <FaWhatsapp className="text-success" /> Send WhatsApp Reminder
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {reminderCustomer && (
+              <div className="mb-3 p-3 bg-light rounded-3">
+                <div className="fw-semibold">{reminderCustomer.name}</div>
+                <div className="text-muted small">{reminderCustomer.phone}</div>
+                <div className="text-danger fw-bold mt-1">
+                  Outstanding: ₹{(reminderCustomer.totalBalance || 0).toLocaleString('en-IN')}
+                </div>
+              </div>
+            )}
+            <Form.Group>
+              <Form.Label className="fw-semibold small">Message</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={4}
+                value={reminderMsg}
+                onChange={(e) => setReminderMsg(e.target.value)}
+                disabled={reminderLoading}
+                placeholder="Custom reminder message..."
+              />
+              <Form.Text className="text-muted">
+                {reminderMsg.length}/500 characters
+              </Form.Text>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowReminderModal(false)} disabled={reminderLoading || smsLoading}>
+              Cancel
+            </Button>
+            <Button variant="info" onClick={() => handleSendReminder('sms')} disabled={smsLoading || reminderLoading || !reminderMsg.trim()} className="d-inline-flex align-items-center gap-2">
+              {smsLoading ? <><Spinner animation="border" size="sm" />Sending...</> : <><FaSms /> Send SMS</>}
+            </Button>
+            <Button variant="success" onClick={() => handleSendReminder('whatsapp')} disabled={reminderLoading || smsLoading || !reminderMsg.trim()} className="d-inline-flex align-items-center gap-2">
+              {reminderLoading ? <><Spinner animation="border" size="sm" />Sending...</> : <><FaWhatsapp /> Send WhatsApp</>}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* ── Ledger Modal ─────────────────────────────────────────────────────── */}
         <Modal show={showLedgerModal} onHide={() => setShowLedgerModal(false)} centered size="lg">
           <Modal.Header closeButton>
             <Modal.Title className="fw-bold">
@@ -394,8 +441,30 @@ const Customers = () => {
               </div>
             )}
           </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowLedgerModal(false)}>
+          <Modal.Footer className="d-flex justify-content-between flex-wrap gap-2">
+            <div className="d-flex gap-2 flex-wrap">
+              <Button
+                variant="outline-danger"
+                size="sm"
+                className="d-inline-flex align-items-center gap-1"
+                disabled={pdfLoading}
+                onClick={() => handleDownloadPDF(selectedCustomer, 0)}
+              >
+                {pdfLoading ? <Spinner animation="border" size="sm" /> : <FaFilePdf />}
+                {pdfLoading ? 'Generating...' : 'Download PDF'}
+              </Button>
+              {selectedCustomer && (selectedCustomer.totalBalance || 0) > 0 && (
+                <Button
+                  variant="outline-success"
+                  size="sm"
+                  className="d-inline-flex align-items-center gap-1"
+                  onClick={() => handleSendStatement(selectedCustomer)}
+                >
+                  <FaWhatsapp /> Send Statement
+                </Button>
+              )}
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setShowLedgerModal(false)}>
               Close
             </Button>
           </Modal.Footer>

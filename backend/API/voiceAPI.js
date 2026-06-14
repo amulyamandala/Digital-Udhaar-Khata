@@ -4,8 +4,8 @@ const fs = require("fs");
 const path = require("path");
 const OpenAI = require("openai");
 const { verifyToken  } = require("../middleware/verifyToken.js");
-const { CustomerModel  } = require("../models/customerModel.js");
-const { TransactionModel  } = require("../models/transactionModel.js");
+const CustomerModel = require("../models/customerModel.js");
+const TransactionModel = require("../models/transactionModel.js");
 
 const voiceApp = exp.Router();
 

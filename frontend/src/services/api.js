@@ -13,8 +13,13 @@ const API = axios.create({
 API.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
+    // Guard against invalid values like 'undefined' or 'null' stored as strings
+    if (token && token !== 'undefined' && token !== 'null') {
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (token === 'undefined' || token === 'null') {
+      // Clean up bad values immediately
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
     }
     return config;
   },
@@ -28,7 +33,9 @@ API.interceptors.response.use(
     const originalRequest = error.config;
 
     // If 401 and not already retried, try refresh token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip refresh for check-auth — a 401 there simply means the user is not logged in
+    const isCheckAuth = originalRequest.url?.includes('check-auth');
+    if (error.response?.status === 401 && !originalRequest._retry && !isCheckAuth) {
       originalRequest._retry = true;
 
       try {

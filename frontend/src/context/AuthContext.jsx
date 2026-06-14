@@ -3,15 +3,34 @@ import API from "../services/api";
 
 const AuthContext = createContext(null);
 
+// Helper: check if a localStorage value is actually usable
+const isValidToken = (t) => t && t !== 'undefined' && t !== 'null';
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('user')) || null; } catch { return null; }
+  });
+  const [token, setToken] = useState(() => {
+    const t = localStorage.getItem('token');
+    return isValidToken(t) ? t : null;
+  });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Check auth session on startup
   const checkAuth = useCallback(async () => {
+    const storedToken = localStorage.getItem('token');
+
+    // No token at all — skip the network call, go straight to logged-out state
+    if (!isValidToken(storedToken)) {
+      setUser(null);
+      setToken(null);
+      setIsAuthenticated(false);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await API.get("/auth/check-auth");
@@ -19,7 +38,9 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setError(null);
     } catch (err) {
+      // Token was present but invalid/expired — wipe everything
       setUser(null);
+      setToken(null);
       setIsAuthenticated(false);
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
