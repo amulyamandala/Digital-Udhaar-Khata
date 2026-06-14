@@ -26,7 +26,8 @@ paymentApp.post("/create-link", verifyToken, async (req, res) => {
     }
 
     // Default short url
-    let shortUrl = `http://localhost:3000/pay-mock/${customer._id}?amount=${amount}`;
+    const frontendUrl = process.env.FRONTEND_URL || "https://digital-udhaar-khata-two.vercel.app";
+    let shortUrl = `${frontendUrl}/pay-mock/${customer._id}?amount=${amount}`;
     let razorpayLinkId = "mock-link-" + Date.now();
 
     // If key credentials exist, execute Razorpay link creation
@@ -41,7 +42,7 @@ paymentApp.post("/create-link", verifyToken, async (req, res) => {
           },
           notify: { sms: true, email: false },
           reminder_enable: true,
-          callback_url: `http://localhost:3000/payment-success`,
+          callback_url: `${process.env.FRONTEND_URL || "https://digital-udhaar-khata-two.vercel.app"}/payment-success`,
           callback_method: "get"
         });
         shortUrl = paymentLink.short_url;

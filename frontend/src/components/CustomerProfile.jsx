@@ -126,7 +126,7 @@ export const CustomerProfile = () => {
     } catch (err) {
       console.error("Razorpay link failed, generating fallback:", err.message);
       // Generate fallback local mock payment link
-      const fallbackUrl = `http://localhost:5000/payments/pay-mock/${id}?amount=${customer.totalBalance}`;
+      const fallbackUrl = `https://digital-udhaar-khata-two.vercel.app/pay-mock/${id}?amount=${customer.totalBalance}`;
       setPaymentLink(fallbackUrl);
     } finally {
       setCreatingPayLink(false);
@@ -141,7 +141,7 @@ export const CustomerProfile = () => {
       let activeLink = paymentLink;
       if (!activeLink) {
         // Generate quick mock link for the AI context if not already fetched
-        activeLink = `http://localhost:3000/pay-mock/${id}?amount=${customer.totalBalance}`;
+        activeLink = `https://digital-udhaar-khata-two.vercel.app/pay-mock/${id}?amount=${customer.totalBalance}`;
       }
 
       const res = await api.post("/notifications/ai-reminder", {
