@@ -1,22 +1,16 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Components
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
-
-// Pages - Auth
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-
-// Voice Context
 import { VoiceProvider } from "./context/VoiceContext";
 
-// Pages - Main
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/ShopProfile";
 import PaymentSimulator from "./components/PaymentSimulator";
@@ -26,13 +20,10 @@ import Payments from "./pages/Payments";
 import Statements from "./pages/Statements";
 import Analytics from "./pages/Analytics";
 
-// Layout for protected pages
 const ProtectedLayout = ({ children }) => (
   <div className="d-flex flex-column min-vh-100">
     <NavBar />
-    <main className="flex-grow-1">
-      {children}
-    </main>
+    <main className="flex-grow-1">{children}</main>
     <Footer />
   </div>
 );
@@ -40,24 +31,9 @@ const ProtectedLayout = ({ children }) => (
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public Authentication routes - No NavBar/Footer */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      
-      {/* Public payment simulation */}
       <Route path="/pay-mock/:id" element={<PaymentSimulator />} />
-
-      {/* Protected routes - With NavBar/Footer */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <ProtectedLayout>
-              <Dashboard />
-            </ProtectedLayout>
-          </ProtectedRoute>
-        }
-      />
 
       <Route
         path="/"
@@ -69,7 +45,16 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <Dashboard />
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/profile"
         element={
@@ -80,7 +65,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/customers"
         element={
@@ -91,7 +75,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/transactions"
         element={
@@ -102,7 +85,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/payments"
         element={
@@ -113,7 +95,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/statements"
         element={
@@ -124,7 +105,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/analytics"
         element={
@@ -136,9 +116,6 @@ function AppRoutes() {
         }
       />
 
-
-
-      {/* Fallback redirection */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
@@ -149,20 +126,20 @@ function App() {
     <VoiceProvider>
       <AuthProvider>
         <BrowserRouter>
-        <AppRoutes />
-        <ToastContainer
-          position="bottom-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
-      </BrowserRouter>
-    </AuthProvider>
+          <AppRoutes />
+          <ToastContainer
+            position="bottom-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+        </BrowserRouter>
+      </AuthProvider>
     </VoiceProvider>
   );
 }

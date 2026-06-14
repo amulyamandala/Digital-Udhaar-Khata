@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Container, Form, Button, Card, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
@@ -15,9 +14,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
-  // Load remembered phone on mount
   React.useEffect(() => {
     const rememberedPhone = localStorage.getItem('rememberedPhone');
     if (rememberedPhone) {
@@ -29,152 +26,139 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     if (!phone || !password) {
-      setError(t('auth.fillAllFields'));
-      setLoading(false);
+      setError('Please fill in all fields.');
       return;
     }
 
+    if (phone.length !== 10 || !/^\d+$/.test(phone)) {
+      setError('Please enter a valid 10-digit phone number.');
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const result = await login(phone, password);
-      
+
       if (result.success) {
-        // Save phone if remember me is checked
         if (rememberMe) {
           localStorage.setItem('rememberedPhone', phone);
         } else {
           localStorage.removeItem('rememberedPhone');
         }
-
-        toast.success(t('auth.loginSuccess'));
+        toast.success('Login successful!');
         navigate('/dashboard');
       } else {
-        setError(result.error);
-        toast.error(result.error);
+        setError(result.error || 'Login failed. Please try again.');
+        toast.error(result.error || 'Login failed.');
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || t('auth.loginError');
+      const errorMsg = err.response?.data?.message || 'Login failed. Please try again.';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   return (
-    <div className="min-vh-100  bg-gradient d-flex align-items-center" style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-    }}>
+    <div
+      className="min-vh-100 d-flex align-items-center"
+      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+    >
       <Container>
         <Row className="justify-content-center">
-          <Col xs={11} sm={8} md={5} lg={5}>
+          <Col xs={12} sm={9} md={6} lg={5} xl={4}>
             <Card className="shadow-lg border-0 rounded-4">
-              <Card.Body className="p-5">
-                {/* Header */}
+              <Card.Body className="p-4 p-sm-5">
                 <div className="text-center mb-4">
-                  <h1 className="display-5 fw-bold mb-2">🏪</h1>
-                  <h2 className="fw-bold text-dark mb-2">Udhaar Khata</h2>
-                  <p className="text-muted">{t('auth.loginSubtitle')}</p>
+                  <div className="fs-1 mb-2">🏪</div>
+                  <h2 className="fw-bold text-dark mb-1">Udhaar Khata</h2>
+                  <p className="text-muted small mb-0">Sign in to manage your shop</p>
                 </div>
 
-                {/* Error Alert */}
                 {error && (
-                  <Alert variant="danger" className="border-0 rounded-3" dismissible>
+                  <Alert variant="danger" className="rounded-3 py-2" dismissible onClose={() => setError('')}>
                     {error}
                   </Alert>
                 )}
 
-                {/* Login Form */}
-                <Form onSubmit={handleSubmit}>
-                  {/* Phone */}
-                  <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold text-dark">{t('auth.phone')}</Form.Label>
+                <Form onSubmit={handleSubmit} noValidate>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold text-dark small">Phone Number</Form.Label>
                     <Form.Control
                       type="tel"
-                      placeholder="9999999999"
+                      placeholder="10-digit mobile number"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="py-3 rounded-3 border-2"
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      className="py-2 rounded-3"
                       disabled={loading}
-                      maxLength="10"
+                      autoComplete="tel"
                     />
-                    <Form.Text className="text-muted">
-                      {t('auth.phoneHelp')}
-                    </Form.Text>
                   </Form.Group>
 
-                  {/* Password */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-dark">{t('auth.password')}</Form.Label>
+                    <Form.Label className="fw-semibold text-dark small">Password</Form.Label>
                     <div className="input-group">
                       <Form.Control
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
+                        placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="py-3 rounded-3 rounded-end-0 border-2"
+                        className="py-2 rounded-3 rounded-end-0"
                         disabled={loading}
+                        autoComplete="current-password"
                       />
                       <Button
                         variant="outline-secondary"
-                        className="rounded-3 rounded-start-0 border-2"
+                        className="rounded-3 rounded-start-0"
                         onClick={() => setShowPassword(!showPassword)}
                         disabled={loading}
+                        type="button"
                       >
                         {showPassword ? <FaEyeSlash /> : <FaEye />}
                       </Button>
                     </div>
                   </Form.Group>
 
-                  {/* Remember Me */}
                   <Form.Group className="mb-4">
                     <Form.Check
                       type="checkbox"
-                      label={t('auth.rememberMe')}
+                      label="Remember my phone number"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
                       disabled={loading}
                     />
                   </Form.Group>
 
-                  {/* Login Button */}
                   <Button
                     type="submit"
-                    className="w-100 py-3 fw-bold fs-5 rounded-3 border-0"
+                    className="w-100 py-2 fw-bold rounded-3"
                     variant="primary"
                     disabled={loading}
                   >
                     {loading ? (
                       <>
                         <Spinner animation="border" size="sm" className="me-2" />
-                        {t('auth.loggingIn')}
+                        Signing in...
                       </>
                     ) : (
-                      t('auth.login')
+                      'Sign In'
                     )}
                   </Button>
                 </Form>
 
-                {/* Forgot Password Link */}
-                <div className="text-center mt-4">
-                  <Link to="/forgot-password" className="text-primary text-decoration-none fw-bold">
-                    {t('auth.forgotPassword')}
-                  </Link>
-                </div>
-
-                {/* Register Link */}
                 <hr className="my-4" />
-                <p className="text-center text-muted mb-0">
-                  {t('auth.noAccount')}{' '}
-                  <Link to="/register" className="text-primary text-decoration-none fw-bold">
-                    {t('auth.registerNow')}
+                <p className="text-center text-muted small mb-0">
+                  Don't have an account?{' '}
+                  <Link to="/register" className="text-primary text-decoration-none fw-semibold">
+                    Register your shop
                   </Link>
                 </p>
               </Card.Body>
             </Card>
-
           </Col>
         </Row>
       </Container>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Container, Form, Button, Card, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
@@ -20,34 +19,33 @@ const Register = () => {
   const [error, setError] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'phone') {
+      setFormData((prev) => ({ ...prev, [name]: value.replace(/\D/g, '').slice(0, 10) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const validateForm = () => {
-    if (!formData.name || !formData.phone || !formData.shopName || !formData.password) {
-      setError(t('auth.fillAllFields'));
+    if (!formData.name.trim() || !formData.phone || !formData.shopName.trim() || !formData.password) {
+      setError('Please fill in all required fields.');
       return false;
     }
-
     if (formData.phone.length !== 10) {
-      setError(t('auth.phoneInvalid'));
+      setError('Phone number must be exactly 10 digits.');
       return false;
     }
-
     if (formData.password.length < 6) {
-      setError(t('auth.passwordTooShort'));
+      setError('Password must be at least 6 characters.');
       return false;
     }
-
     if (formData.password !== formData.confirmPassword) {
-      setError(t('auth.passwordMismatch'));
+      setError('Passwords do not match.');
       return false;
     }
-
     return true;
   };
 
@@ -55,30 +53,28 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
     try {
       const result = await register({
-        name: formData.name,
+        name: formData.name.trim(),
         phone: formData.phone,
-        shopName: formData.shopName,
+        shopName: formData.shopName.trim(),
         language: formData.language,
         password: formData.password,
       });
 
       if (result.success) {
-        toast.success(t('auth.registerSuccess'));
+        toast.success('Shop registered successfully!');
         navigate('/dashboard');
       } else {
-        setError(result.error);
-        toast.error(result.error);
+        setError(result.error || 'Registration failed. Please try again.');
+        toast.error(result.error || 'Registration failed.');
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || t('auth.registerError');
+      const errorMsg = err.response?.data?.message || 'Registration failed. Please try again.';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -87,81 +83,76 @@ const Register = () => {
   };
 
   return (
-    <div className="min-vh-100 bg-gradient d-flex align-items-center py-5" style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-    }}>
+    <div
+      className="min-vh-100 d-flex align-items-center py-4"
+      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+    >
       <Container>
         <Row className="justify-content-center">
-          <Col xs={12} sm={10} md={8} lg={6}>
+          <Col xs={12} sm={10} md={7} lg={6} xl={5}>
             <Card className="shadow-lg border-0 rounded-4">
-              <Card.Body className="p-5">
-                {/* Header */}
+              <Card.Body className="p-4 p-sm-5">
                 <div className="text-center mb-4">
-                  <h1 className="display-5 fw-bold mb-2">🏪</h1>
-                  <h2 className="fw-bold text-dark mb-2">{t('auth.registerShop')}</h2>
-                  <p className="text-muted">{t('auth.registerSubtitle')}</p>
+                  <div className="fs-1 mb-2">🏪</div>
+                  <h2 className="fw-bold text-dark mb-1">Register Your Shop</h2>
+                  <p className="text-muted small mb-0">Start managing your credit ledger</p>
                 </div>
 
-                {/* Error Alert */}
                 {error && (
-                  <Alert variant="danger" className="border-0 rounded-3" dismissible>
+                  <Alert variant="danger" className="rounded-3 py-2" dismissible onClose={() => setError('')}>
                     {error}
                   </Alert>
                 )}
 
-                {/* Register Form */}
-                <Form onSubmit={handleSubmit}>
-                  {/* Name */}
+                <Form onSubmit={handleSubmit} noValidate>
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-dark">{t('auth.ownerName')}</Form.Label>
+                    <Form.Label className="fw-semibold text-dark small">Owner Name <span className="text-danger">*</span></Form.Label>
                     <Form.Control
                       type="text"
-                      placeholder="Your Name"
+                      placeholder="Your full name"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      className="py-3 rounded-3 border-2"
+                      className="py-2 rounded-3"
                       disabled={loading}
+                      autoComplete="name"
                     />
                   </Form.Group>
 
-                  {/* Phone */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-dark">{t('auth.phone')}</Form.Label>
+                    <Form.Label className="fw-semibold text-dark small">Phone Number <span className="text-danger">*</span></Form.Label>
                     <Form.Control
                       type="tel"
-                      placeholder="9999999999"
+                      placeholder="10-digit mobile number"
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="py-3 rounded-3 border-2"
+                      className="py-2 rounded-3"
                       disabled={loading}
-                      maxLength="10"
+                      autoComplete="tel"
                     />
                   </Form.Group>
 
-                  {/* Shop Name */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-dark">{t('auth.shopName')}</Form.Label>
+                    <Form.Label className="fw-semibold text-dark small">Shop Name <span className="text-danger">*</span></Form.Label>
                     <Form.Control
                       type="text"
-                      placeholder="My Kirana Store"
+                      placeholder="e.g. Sharma Kirana Store"
                       name="shopName"
                       value={formData.shopName}
                       onChange={handleChange}
-                      className="py-3 rounded-3 border-2"
+                      className="py-2 rounded-3"
                       disabled={loading}
                     />
                   </Form.Group>
 
-                  {/* Language */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-dark">{t('auth.language')}</Form.Label>
+                    <Form.Label className="fw-semibold text-dark small">Preferred Language</Form.Label>
                     <Form.Select
                       name="language"
                       value={formData.language}
                       onChange={handleChange}
-                      className="py-3 rounded-3 border-2"
+                      className="py-2 rounded-3"
                       disabled={loading}
                     >
                       <option value="en">English</option>
@@ -171,68 +162,67 @@ const Register = () => {
                     </Form.Select>
                   </Form.Group>
 
-                  {/* Password */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-dark">{t('auth.password')}</Form.Label>
+                    <Form.Label className="fw-semibold text-dark small">Password <span className="text-danger">*</span></Form.Label>
                     <div className="input-group">
                       <Form.Control
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
+                        placeholder="Minimum 6 characters"
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        className="py-3 rounded-3 rounded-end-0 border-2"
+                        className="py-2 rounded-3 rounded-end-0"
                         disabled={loading}
+                        autoComplete="new-password"
                       />
                       <Button
                         variant="outline-secondary"
-                        className="rounded-3 rounded-start-0 border-2"
+                        className="rounded-3 rounded-start-0"
                         onClick={() => setShowPassword(!showPassword)}
                         disabled={loading}
+                        type="button"
                       >
                         {showPassword ? <FaEyeSlash /> : <FaEye />}
                       </Button>
                     </div>
                   </Form.Group>
 
-                  {/* Confirm Password */}
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold text-dark">{t('auth.confirmPassword')}</Form.Label>
+                    <Form.Label className="fw-semibold text-dark small">Confirm Password <span className="text-danger">*</span></Form.Label>
                     <Form.Control
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
+                      placeholder="Re-enter your password"
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className="py-3 rounded-3 border-2"
+                      className="py-2 rounded-3"
                       disabled={loading}
+                      autoComplete="new-password"
                     />
                   </Form.Group>
 
-                  {/* Register Button */}
                   <Button
                     type="submit"
-                    className="w-100 py-3 fw-bold fs-5 rounded-3 border-0"
+                    className="w-100 py-2 fw-bold rounded-3"
                     variant="primary"
                     disabled={loading}
                   >
                     {loading ? (
                       <>
                         <Spinner animation="border" size="sm" className="me-2" />
-                        {t('auth.registering')}
+                        Registering...
                       </>
                     ) : (
-                      t('auth.register')
+                      'Create Account'
                     )}
                   </Button>
                 </Form>
 
-                {/* Login Link */}
                 <hr className="my-4" />
-                <p className="text-center text-muted mb-0">
-                  {t('auth.alreadyHaveAccount')}{' '}
-                  <Link to="/login" className="text-primary text-decoration-none fw-bold">
-                    {t('auth.loginNow')}
+                <p className="text-center text-muted small mb-0">
+                  Already have an account?{' '}
+                  <Link to="/login" className="text-primary text-decoration-none fw-semibold">
+                    Sign in
                   </Link>
                 </p>
               </Card.Body>

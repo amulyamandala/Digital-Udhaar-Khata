@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Table, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Spinner, Alert, Badge } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { FaChartLine, FaUsers, FaCreditCard, FaHistory, FaPlus, FaMoneyBillWave, FaShareSquare, FaChartBar } from 'react-icons/fa';
-import { COLORS, TYPOGRAPHY, SPACING, ROUNDED, COMPONENTS } from '../utils/common';
+import { FaChartLine, FaUsers, FaCreditCard, FaHistory, FaPlus, FaMoneyBillWave, FaChartBar } from 'react-icons/fa';
+import API from '../services/api';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
+  const [recentTransactions, setRecentTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -21,209 +20,203 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // For now, mock data until API is ready
-      const mockStats = {
-        totalCustomers: 45,
-        totalOutstanding: 25000,
-        totalRecovered: 15000,
-        pendingPayments: 8
-      };
-      setStats(mockStats);
+      setError('');
+
+      const [customersRes, transactionsRes] = await Promise.allSettled([
+        API.get('/customers'),
+        API.get('/transactions/shop/' + (user?.id || user?._id || '')),
+      ]);
+
+      let totalCustomers = 0;
+      let totalOutstanding = 0;
+
+      if (customersRes.status === 'fulfilled') {
+        const customers = customersRes.value.data?.customers || [];
+        totalCustomers = customers.length;
+        totalOutstanding = customers.reduce((sum, c) => sum + (c.totalBalance || 0), 0);
+      }
+
+      let txnList = [];
+      let totalRecovered = 0;
+      let pendingPayments = 0;
+
+      if (transactionsRes.status === 'fulfilled') {
+        txnList = transactionsRes.value.data?.transactions || [];
+        totalRecovered = txnList
+          .filter((t) => t.type === 'DEBIT')
+          .reduce((sum, t) => sum + (t.amount || 0), 0);
+        pendingPayments = txnList.filter((t) => t.type === 'CREDIT').length;
+      }
+
+      setStats({ totalCustomers, totalOutstanding, totalRecovered, pendingPayments });
+      setRecentTransactions(txnList.slice(0, 5));
     } catch (err) {
-      setError(t('common.error') + ': ' + err.message);
+      setError('Failed to load dashboard data. Please refresh.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Inline styles using common.js
-  const pageContainerStyle = {
-    backgroundColor: COLORS.surfaceSoft,
-    minHeight: '100vh',
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.xxxl,
-    paddingLeft: SPACING.xxl,
-    paddingRight: SPACING.xxl,
-  };
-
-  const cardStyle = {
-    ...COMPONENTS.featureCardLight,
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    padding: SPACING.xl,
-  };
-
-  const iconContainerStyle = (color) => ({
-    backgroundColor: `${color}1A`, // 10% opacity
-    color: color,
-    width: '56px',
-    height: '56px',
-    borderRadius: ROUNDED.full,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '28px'
-  });
+  const statCards = [
+    {
+      label: 'Total Customers',
+      value: stats?.totalCustomers ?? 0,
+      icon: <FaUsers size={24} />,
+      color: '#494fdf',
+      bg: '#eef0ff',
+      prefix: '',
+    },
+    {
+      label: 'Total Outstanding',
+      value: stats?.totalOutstanding ?? 0,
+      icon: <FaCreditCard size={24} />,
+      color: '#e23b4a',
+      bg: '#fdeced',
+      prefix: '₹',
+    },
+    {
+      label: 'Total Recovered',
+      value: stats?.totalRecovered ?? 0,
+      icon: <FaChartLine size={24} />,
+      color: '#00a87e',
+      bg: '#e6f7f3',
+      prefix: '₹',
+    },
+    {
+      label: 'Credit Entries',
+      value: stats?.pendingPayments ?? 0,
+      icon: <FaHistory size={24} />,
+      color: '#ec7e00',
+      bg: '#fff4e6',
+      prefix: '',
+    },
+  ];
 
   return (
-    <div style={pageContainerStyle}>
-      <Container fluid className="p-0">
-        {/* Header */}
-        <Row className="align-items-center mb-5">
-          <Col md={12}>
-            <h1 style={{ ...TYPOGRAPHY.displayMd, color: COLORS.ink, marginBottom: SPACING.xxs }}>
-              {t('dashboard.welcome')} {user?.name || 'User'}!
-            </h1>
-            <p style={{ ...TYPOGRAPHY.bodyLg, color: COLORS.mute, margin: 0 }}>
-              {user?.shopName || 'Manage your business beautifully'}
-            </p>
+    <div className="bg-light min-vh-100 py-4">
+      <Container fluid className="px-3 px-md-4">
+        <Row className="align-items-center mb-4">
+          <Col>
+            <h4 className="fw-bold text-dark mb-0">
+              Welcome back, {user?.name || 'User'}! 👋
+            </h4>
+            <p className="text-muted small mb-0">{user?.shopName || 'Your Shop'}</p>
           </Col>
         </Row>
 
         {error && (
-          <div style={{ backgroundColor: COLORS.accentPink, color: COLORS.onPrimary, padding: SPACING.md, borderRadius: ROUNDED.md, marginBottom: SPACING.lg }}>
+          <Alert variant="danger" dismissible onClose={() => setError('')} className="mb-4">
             {error}
-          </div>
+          </Alert>
         )}
 
         {loading ? (
-          <div className="text-center py-5">
-            <Spinner animation="border" style={{ color: COLORS.primary }} />
+          <div className="d-flex justify-content-center align-items-center py-5">
+            <Spinner animation="border" variant="primary" />
           </div>
         ) : (
           <>
-            {/* KPIs */}
-            <Row className="g-4 mb-5">
-              <Col xs={12} sm={6} lg={3}>
-                <div style={cardStyle}>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <div>
-                      <p style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, marginBottom: SPACING.xxs }}>{t('dashboard.totalCustomers') || 'Total Customers'}</p>
-                      <h3 style={{ ...TYPOGRAPHY.headingLg, color: COLORS.ink, margin: 0 }}>{stats?.totalCustomers || 0}</h3>
-                    </div>
-                    <div style={iconContainerStyle(COLORS.primary)}>
-                      <FaUsers />
-                    </div>
-                  </div>
-                </div>
-              </Col>
-
-              <Col xs={12} sm={6} lg={3}>
-                <div style={cardStyle}>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <div>
-                      <p style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, marginBottom: SPACING.xxs }}>{t('dashboard.totalOutstanding') || 'Total Outstanding'}</p>
-                      <h3 style={{ ...TYPOGRAPHY.headingLg, color: COLORS.ink, margin: 0 }}>₹{stats?.totalOutstanding || 0}</h3>
-                    </div>
-                    <div style={iconContainerStyle(COLORS.accentDanger)}>
-                      <FaCreditCard />
-                    </div>
-                  </div>
-                </div>
-              </Col>
-
-              <Col xs={12} sm={6} lg={3}>
-                <div style={cardStyle}>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <div>
-                      <p style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, marginBottom: SPACING.xxs }}>{t('dashboard.totalRecovered') || 'Total Recovered'}</p>
-                      <h3 style={{ ...TYPOGRAPHY.headingLg, color: COLORS.ink, margin: 0 }}>₹{stats?.totalRecovered || 0}</h3>
-                    </div>
-                    <div style={iconContainerStyle(COLORS.accentTeal)}>
-                      <FaChartLine />
-                    </div>
-                  </div>
-                </div>
-              </Col>
-
-              <Col xs={12} sm={6} lg={3}>
-                <div style={cardStyle}>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <div>
-                      <p style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, marginBottom: SPACING.xxs }}>{t('dashboard.pending_payments') || 'Pending Payments'}</p>
-                      <h3 style={{ ...TYPOGRAPHY.headingLg, color: COLORS.ink, margin: 0 }}>{stats?.pendingPayments || 0}</h3>
-                    </div>
-                    <div style={iconContainerStyle(COLORS.accentWarning)}>
-                      <FaHistory />
-                    </div>
-                  </div>
-                </div>
-              </Col>
+            {/* KPI Cards */}
+            <Row className="g-3 mb-4">
+              {statCards.map((card, i) => (
+                <Col xs={12} sm={6} xl={3} key={i}>
+                  <Card className="border-0 shadow-sm h-100">
+                    <Card.Body className="p-3">
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div>
+                          <p className="text-muted small mb-1">{card.label}</p>
+                          <h4 className="fw-bold mb-0" style={{ color: card.color }}>
+                            {card.prefix}{typeof card.value === 'number' ? card.value.toLocaleString('en-IN') : card.value}
+                          </h4>
+                        </div>
+                        <div
+                          className="d-flex align-items-center justify-content-center rounded-circle"
+                          style={{ width: 48, height: 48, backgroundColor: card.bg, color: card.color }}
+                        >
+                          {card.icon}
+                        </div>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
             </Row>
 
             {/* Quick Actions */}
-            <div style={{ marginBottom: SPACING.section }}>
-              <h4 style={{ ...TYPOGRAPHY.headingMd, color: COLORS.ink, marginBottom: SPACING.lg }}>Quick Actions</h4>
-              <div className="d-flex flex-wrap gap-3">
-                <button
-                  style={{ ...COMPONENTS.buttonPrimary, display: 'inline-flex', alignItems: 'center' }}
-                  onClick={() => navigate('/customers')}
-                >
-                  <FaPlus style={{ marginRight: SPACING.xs }} /> Add Customer
-                </button>
-                <button
-                  style={{ ...COMPONENTS.buttonSoft, display: 'inline-flex', alignItems: 'center' }}
-                  onClick={() => navigate('/transactions')}
-                >
-                  <FaMoneyBillWave style={{ marginRight: SPACING.xs }} /> Add Transaction
-                </button>
-                <button
-                  style={{ ...COMPONENTS.buttonSoft, display: 'inline-flex', alignItems: 'center' }}
-                  onClick={() => navigate('/payments')}
-                >
-                  <FaShareSquare style={{ marginRight: SPACING.xs }} /> Create Payment Link
-                </button>
-                <button
-                  style={{ ...COMPONENTS.buttonSoft, display: 'inline-flex', alignItems: 'center' }}
-                  onClick={() => navigate('/analytics')}
-                >
-                  <FaChartBar style={{ marginRight: SPACING.xs }} /> View Report
-                </button>
-              </div>
-            </div>
+            <Card className="border-0 shadow-sm mb-4">
+              <Card.Body className="p-3">
+                <h6 className="fw-bold mb-3">Quick Actions</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  <button
+                    className="btn btn-primary btn-sm d-inline-flex align-items-center gap-2"
+                    onClick={() => navigate('/customers')}
+                  >
+                    <FaPlus /> Add Customer
+                  </button>
+                  <button
+                    className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
+                    onClick={() => navigate('/transactions')}
+                  >
+                    <FaMoneyBillWave /> Add Transaction
+                  </button>
+                  <button
+                    className="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2"
+                    onClick={() => navigate('/analytics')}
+                  >
+                    <FaChartBar /> View Analytics
+                  </button>
+                </div>
+              </Card.Body>
+            </Card>
 
             {/* Recent Transactions */}
-            <div>
-              <h4 style={{ ...TYPOGRAPHY.headingMd, color: COLORS.ink, marginBottom: SPACING.lg }}>{t('dashboard.recentTransactions') || 'Recent Transactions'}</h4>
-              <div style={{ ...COMPONENTS.featureCardLight, padding: 0, overflow: 'hidden' }}>
-                <Table responsive hover className="mb-0" style={{ margin: 0 }}>
-                  <thead style={{ backgroundColor: COLORS.surfaceSoft }}>
+            <Card className="border-0 shadow-sm">
+              <Card.Header className="bg-white border-bottom py-3">
+                <h6 className="fw-bold mb-0">Recent Transactions</h6>
+              </Card.Header>
+              <div className="table-responsive">
+                <Table hover className="mb-0 align-middle">
+                  <thead className="table-light">
                     <tr>
-                      <th style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, padding: SPACING.lg, borderBottom: `1px solid ${COLORS.hairlineLight}`, borderTop: 'none' }}>Customer</th>
-                      <th style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, padding: SPACING.lg, borderBottom: `1px solid ${COLORS.hairlineLight}`, borderTop: 'none' }}>Type</th>
-                      <th style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, padding: SPACING.lg, borderBottom: `1px solid ${COLORS.hairlineLight}`, borderTop: 'none' }}>Amount</th>
-                      <th style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, padding: SPACING.lg, borderBottom: `1px solid ${COLORS.hairlineLight}`, borderTop: 'none' }}>Date</th>
-                      <th style={{ ...TYPOGRAPHY.bodySm, color: COLORS.mute, padding: SPACING.lg, borderBottom: `1px solid ${COLORS.hairlineLight}`, borderTop: 'none' }}>Status</th>
+                      <th className="fw-semibold text-muted small border-0">Customer</th>
+                      <th className="fw-semibold text-muted small border-0">Type</th>
+                      <th className="fw-semibold text-muted small border-0">Amount</th>
+                      <th className="fw-semibold text-muted small border-0">Date</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td style={{ ...TYPOGRAPHY.bodyMdBold, color: COLORS.ink, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}>Rajesh Kumar</td>
-                      <td style={{ padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}><span style={{ ...COMPONENTS.badgeFeature }}>Credit</span></td>
-                      <td style={{ ...TYPOGRAPHY.bodyMd, color: COLORS.ink, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}>₹500</td>
-                      <td style={{ ...TYPOGRAPHY.bodyMd, color: COLORS.mute, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}>Today</td>
-                      <td style={{ padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}><span style={{ color: COLORS.accentTeal, fontWeight: 600 }}>✅ Complete</span></td>
-                    </tr>
-                    <tr>
-                      <td style={{ ...TYPOGRAPHY.bodyMdBold, color: COLORS.ink, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}>Priya Singh</td>
-                      <td style={{ padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}><span style={{ ...COMPONENTS.badgeFeature, backgroundColor: COLORS.accentTeal }}>Payment</span></td>
-                      <td style={{ ...TYPOGRAPHY.bodyMd, color: COLORS.ink, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}>₹1000</td>
-                      <td style={{ ...TYPOGRAPHY.bodyMd, color: COLORS.mute, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}>Yesterday</td>
-                      <td style={{ padding: SPACING.lg, verticalAlign: 'middle', borderBottom: `1px solid ${COLORS.hairlineLight}` }}><span style={{ color: COLORS.accentTeal, fontWeight: 600 }}>✅ Complete</span></td>
-                    </tr>
-                    <tr>
-                      <td style={{ ...TYPOGRAPHY.bodyMdBold, color: COLORS.ink, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: 'none' }}>Arjun Patel</td>
-                      <td style={{ padding: SPACING.lg, verticalAlign: 'middle', borderBottom: 'none' }}><span style={{ ...COMPONENTS.badgeFeature }}>Credit</span></td>
-                      <td style={{ ...TYPOGRAPHY.bodyMd, color: COLORS.ink, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: 'none' }}>₹750</td>
-                      <td style={{ ...TYPOGRAPHY.bodyMd, color: COLORS.mute, padding: SPACING.lg, verticalAlign: 'middle', borderBottom: 'none' }}>2 days ago</td>
-                      <td style={{ padding: SPACING.lg, verticalAlign: 'middle', borderBottom: 'none' }}><span style={{ color: COLORS.accentWarning, fontWeight: 600 }}>⏳ Pending</span></td>
-                    </tr>
+                    {recentTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="text-center text-muted py-4">
+                          No transactions yet. <span
+                            className="text-primary"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => navigate('/customers')}
+                          >Add a customer</span> to get started.
+                        </td>
+                      </tr>
+                    ) : (
+                      recentTransactions.map((txn) => (
+                        <tr key={txn._id}>
+                          <td className="fw-semibold">{txn.customerName || txn.customerId?.name || '—'}</td>
+                          <td>
+                            <Badge bg={txn.type === 'CREDIT' ? 'danger' : 'success'} className="fw-normal">
+                              {txn.type === 'CREDIT' ? 'Credit Given' : 'Payment Received'}
+                            </Badge>
+                          </td>
+                          <td className={`fw-semibold ${txn.type === 'CREDIT' ? 'text-danger' : 'text-success'}`}>
+                            ₹{(txn.amount || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td className="text-muted small">
+                            {txn.createdAt ? new Date(txn.createdAt).toLocaleDateString('en-IN') : '—'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </Table>
               </div>
-            </div>
+            </Card>
           </>
         )}
       </Container>
